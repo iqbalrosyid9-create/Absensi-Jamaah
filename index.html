@@ -28,7 +28,7 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
-  <!-- Top Navigation / Header -->
+  <!-- Header -->
   <header class="bg-emerald-800 border-b border-emerald-700 sticky top-0 z-40 shadow-md">
     <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-2">
@@ -40,7 +40,10 @@
           <p id="live-clock" class="text-xs text-emerald-200">Memuat jam...</p>
         </div>
       </div>
-      <div class="text-right">
+      <div class="flex items-center space-x-2">
+        <button id="btn-sync-manual" class="px-2.5 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center gap-1">
+          🔄 Sync
+        </button>
         <span id="current-prayer-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950 text-emerald-300 border border-emerald-600">
           Subuh
         </span>
@@ -48,7 +51,7 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
+  <!-- Main Container -->
   <main class="flex-1 max-w-md w-full mx-auto p-4 pb-24 space-y-4">
     
     <!-- Tab 1: Scanner View -->
@@ -65,7 +68,6 @@
           </select>
         </div>
 
-        <!-- Camera Area -->
         <div class="relative bg-slate-950 rounded-xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
           <div id="reader" class="w-full"></div>
           <div id="camera-placeholder" class="text-center p-6 space-y-2">
@@ -105,32 +107,15 @@
       </div>
     </section>
 
-    <!-- Tab 2: Jamaah & QR Generator -->
+    <!-- Tab 2: Jamaah (Tersinkron Sheet2) -->
     <section id="tab-jamaah" class="hidden space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
-        <h2 class="text-sm font-bold text-slate-200">Pendaftaran Kartu Jamaah</h2>
-        <div class="space-y-2">
-          <input type="text" id="form-name" placeholder="Nama Lengkap" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
-          <input type="text" id="form-id" placeholder="ID Unik (Auto)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
-          <select id="form-category" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none">
-            <option value="Santri">Santri</option>
-            <option value="Jamaah Umum">Jamaah Umum</option>
-            <option value="Pengurus">Pengurus / Ustadz</option>
-          </select>
-          <button id="btn-save-jamaah" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold text-white transition">
-            Simpan & Buat Kartu QR
-          </button>
-
-          <!-- Input File Tersembunyi & Tombol Import CSV -->
-          <input type="file" id="csv-file-input" accept=".csv" class="hidden">
-          <div class="flex gap-2 pt-1">
-            <button id="btn-import-csv" type="button" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition">
-              📥 Import CSV Jamaah
-            </button>
-            <button id="btn-download-template" type="button" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-[11px] text-slate-300 transition">
-              📄 Unduh Format
-            </button>
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-sm font-bold text-slate-200">Database Jamaah</h2>
+            <p class="text-[11px] text-slate-400">Tersinkron otomatis dari Google Sheets (Sheet2)</p>
           </div>
+          <span id="jamaah-count" class="text-xs text-emerald-400 font-bold bg-slate-900 px-2 py-1 rounded-lg">0 Orang</span>
         </div>
       </div>
 
@@ -145,17 +130,13 @@
         </div>
       </div>
 
-      <!-- Daftar Jamaah Terdaftar -->
+      <!-- List Jamaah -->
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
-        <div class="flex items-center justify-between">
-          <h2 class="text-xs font-semibold text-slate-400">DAFTAR JAMAAH</h2>
-          <span id="jamaah-count" class="text-xs text-emerald-400 font-bold">0 Orang</span>
-        </div>
-        <div id="jamaah-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+        <div id="jamaah-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </section>
 
-    <!-- Tab 3: Riwayat & Rekap -->
+    <!-- Tab 3: Rekap (Tersinkron Sheet1) -->
     <section id="tab-rekap" class="hidden space-y-4">
       <div class="grid grid-cols-2 gap-3">
         <div class="bg-slate-800 border border-slate-700 p-3 rounded-2xl text-center">
@@ -170,18 +151,18 @@
 
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
-          <h2 class="text-xs font-semibold text-slate-400">LOG PRESENSI</h2>
+          <h2 class="text-xs font-semibold text-slate-400">LOG PRESENSI GOOGLE SHEETS</h2>
           <button id="btn-export-csv" class="text-xs bg-emerald-700 hover:bg-emerald-600 px-2.5 py-1 rounded-lg text-white font-medium">
             Export CSV
           </button>
         </div>
-        <div id="log-list" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+        <div id="log-list" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
       </div>
     </section>
 
   </main>
 
-  <!-- Bottom Navigation Bar -->
+  <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 z-40 max-w-md mx-auto">
     <div class="grid grid-cols-3 py-2 text-center text-xs">
       <button data-tab="tab-scan" class="nav-btn text-emerald-400 flex flex-col items-center space-y-1">
@@ -200,27 +181,12 @@
   </nav>
 
   <script>
-    // --- PWA Service Worker Registration ---
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log('PWA Service Worker terpasang.'))
-          .catch(err => console.error('PWA SW gagal:', err));
-      });
-    }
-
-    // --- State & Google Apps Script Setup ---
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszfOTv1q99BRO8skYi5ueiN16wmogFbTZEYjop4nIMGOGi_AtXfngea_ojoNjwBTU/exec";
     let html5QrCode = null;
     let isScanning = false;
 
-    const initialJamaah = [
-      { id: "JMH-001", name: "Ahmad Zaki", category: "Santri" },
-      { id: "JMH-002", name: "Muhammad Rizky", category: "Santri" },
-      { id: "JMH-003", name: "Pak Subandi", category: "Jamaah Umum" }
-    ];
-
-    let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || initialJamaah;
+    // Baca cache lokal saat pertama kali buka agar cepat, lalu diperbarui dari Sheets
+    let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
     function saveState() {
@@ -228,53 +194,62 @@
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
     }
 
-    // --- Normalisasi Format Tanggal Kebal Format Google Sheets ---
     function parseDateNormalized(rawDate) {
       if (!rawDate) return '';
       const str = String(rawDate).trim();
-      
-      const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const matchIso = str.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
       if (matchIso) {
-        return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
+        return `${matchIso[1]}-${String(matchIso[2]).padStart(2, '0')}-${String(matchIso[3]).padStart(2, '0')}`;
       }
-
       const months = {
         Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06',
         Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12'
       };
       const matchGmt = str.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
       if (matchGmt && months[matchGmt[1]]) {
-        const m = months[matchGmt[1]];
-        const d = String(matchGmt[2]).padStart(2, '0');
-        const y = matchGmt[3];
-        return `${y}-${m}-${d}`;
+        return `${matchGmt[3]}-${months[matchGmt[1]]}-${String(matchGmt[2]).padStart(2, '0')}`;
       }
-
       return str;
     }
 
-    // --- Sinkronisasi Cloud Dua Arah ---
-    async function syncFromCloud() {
-      if (!SCRIPT_URL) return;
-      try {
-        const res = await fetch(SCRIPT_URL);
-        const result = await res.json();
-        if (result.status === 'success' && Array.isArray(result.data)) {
-          logsData = result.data;
-          localStorage.setItem('absensi_logs', JSON.stringify(logsData));
-          renderLogs();
-          renderStats();
-          console.log('Sinkronisasi cloud berhasil: ' + logsData.length + ' data masuk.');
+    // --- SINKRONISASI MASTER GOOGLE SHEETS (JSONP BEBAS CORS) ---
+    window.handleCloudMaster = function(res) {
+      if (res && res.status === 'success') {
+        if (Array.isArray(res.jamaah) && res.jamaah.length > 0) {
+          jamaahData = res.jamaah;
         }
-      } catch (err) {
-        console.warn('Gagal sinkron data cloud, memakai offline storage:', err);
+        if (Array.isArray(res.logs)) {
+          logsData = res.logs;
+        }
+        saveState();
+        renderJamaahList();
+        renderLogs();
+        renderStats();
+        console.log('Sinkron master berhasil: ' + jamaahData.length + ' jamaah, ' + logsData.length + ' log');
       }
+    };
+
+    function syncFromCloud() {
+      if (!SCRIPT_URL) return;
+      const oldScript = document.getElementById('jsonp-sync-script');
+      if (oldScript) oldScript.remove();
+
+      const script = document.createElement('script');
+      script.id = 'jsonp-sync-script';
+      script.src = SCRIPT_URL + '?callback=handleCloudMaster&_t=' + Date.now();
+      document.body.appendChild(script);
     }
 
+    // Tarik data saat aplikasi dibuka & interval tiap 10 detik
     syncFromCloud();
-    setInterval(syncFromCloud, 15000);
+    setInterval(syncFromCloud, 10000);
 
-    // --- Audio Feedback ---
+    document.getElementById('btn-sync-manual').addEventListener('click', () => {
+      syncFromCloud();
+      showFeedback(true, 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
+    });
+
+    // Audio & Haptic
     function playBeep(success = true) {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -282,58 +257,37 @@
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        
-        if (success) {
-          osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.12);
-        } else {
-          osc.frequency.setValueAtTime(320, audioCtx.currentTime);
-          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.25);
-        }
-      } catch (e) {
-        console.warn('Audio Context tidak diizinkan sebelum interaksi user');
-      }
+        osc.frequency.setValueAtTime(success ? 880 : 320, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        osc.start();
+        osc.stop(audioCtx.currentTime + (success ? 0.12 : 0.25));
+      } catch (e) {}
     }
 
-    // --- Mobile Haptic Feedback ---
     function triggerHaptic(type = 'success') {
       if ('vibrate' in navigator) {
-        if (type === 'success') {
-          navigator.vibrate([80, 50, 80]);
-        } else {
-          navigator.vibrate(250);
-        }
+        navigator.vibrate(type === 'success' ? [80, 50, 80] : 250);
       }
     }
 
-    // --- Perhitungan Waktu Sholat Otomatis ---
     function getEstimatedPrayer() {
       const now = new Date();
-      const hour = now.getHours();
-      const minute = now.getMinutes();
-      const totalMinutes = hour * 60 + minute;
-
-      if (totalMinutes >= 270 && totalMinutes < 390) return "Subuh";     // 04:30 - 06:30
-      if (totalMinutes >= 705 && totalMinutes < 870) return "Dzuhur";    // 11:45 - 14:30
-      if (totalMinutes >= 900 && totalMinutes < 1050) return "Ashar";    // 15:00 - 17:30
-      if (totalMinutes >= 1065 && totalMinutes < 1140) return "Maghrib"; // 17:45 - 19:00
-      if (totalMinutes >= 1140 || totalMinutes < 240) return "Isya";     // 19:00 - 04:00
+      const totalMinutes = now.getHours() * 60 + now.getMinutes();
+      if (totalMinutes >= 270 && totalMinutes < 390) return "Subuh";
+      if (totalMinutes >= 705 && totalMinutes < 870) return "Dzuhur";
+      if (totalMinutes >= 900 && totalMinutes < 1050) return "Ashar";
+      if (totalMinutes >= 1065 && totalMinutes < 1140) return "Maghrib";
+      if (totalMinutes >= 1140 || totalMinutes < 240) return "Isya";
       return "Dzuhur";
     }
 
     function updateClock() {
       const now = new Date();
       document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID') + ' WIB';
-      
-      const currentPrayer = getEstimatedPrayer();
-      document.getElementById('current-prayer-badge').textContent = currentPrayer;
-      
+      const curPrayer = getEstimatedPrayer();
+      document.getElementById('current-prayer-badge').textContent = curPrayer;
       if (!window.userChangedPrayer) {
-        document.getElementById('prayer-select').value = currentPrayer;
+        document.getElementById('prayer-select').value = curPrayer;
       }
     }
     setInterval(updateClock, 1000);
@@ -343,7 +297,7 @@
       window.userChangedPrayer = true;
     });
 
-    // --- Pemrosesan Presensi ---
+    // --- PROSES ABSENSI ---
     function processAttendance(jamaahId) {
       const cleanId = (jamaahId || '').trim();
       if (!cleanId) return;
@@ -352,14 +306,16 @@
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+      // Cek ke daftar jamaah yang diambil dari Sheet2
       const person = jamaahData.find(j => j.id.toLowerCase() === cleanId.toLowerCase());
       if (!person) {
-        showFeedback(false, 'Tidak Ditemukan', `ID: ${cleanId} belum terdaftar.`);
+        showFeedback(false, 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database Sheet2.`);
         playBeep(false);
         triggerHaptic('error');
         return;
       }
 
+      // Cek apakah sudah absen hari ini
       const alreadyCheckedIn = logsData.some(log => 
         log.jamaahId === person.id && 
         parseDateNormalized(log.date) === todayStr && 
@@ -367,7 +323,7 @@
       );
 
       if (alreadyCheckedIn) {
-        showFeedback(false, 'Sudah Absen', `${person.name} sudah tercatat pada sholat ${prayer}.`);
+        showFeedback(false, 'Sudah Absen', `${person.name} sudah absen sholat ${prayer}.`);
         playBeep(false);
         triggerHaptic('error');
         return;
@@ -384,30 +340,27 @@
         status: 'Tepat Waktu'
       };
 
+      // Tampilkan seketika di layar HP yang sedang scan
       logsData.unshift(newRecord);
       saveState();
+      renderLogs();
+      renderStats();
 
+      // Kirim ke Google Sheets
       if (SCRIPT_URL) {
         fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newRecord)
         }).then(() => {
-          console.log('Presensi berhasil dikirim ke Google Sheets');
-        }).catch(err => {
-          console.error('Gagal sinkron cloud:', err);
-        });
+          setTimeout(syncFromCloud, 1000); // Tarik ulang untuk verifikasi
+        }).catch(err => console.error('Gagal kirim:', err));
       }
       
       showFeedback(true, 'Presensi Masuk', `${person.name} (${prayer})`);
       playBeep(true);
       triggerHaptic('success');
-
-      renderLogs();
-      renderStats();
     }
 
     function showFeedback(success, title, msg) {
@@ -431,12 +384,10 @@
       msgEl.textContent = msg;
 
       clearTimeout(window.feedbackTimer);
-      window.feedbackTimer = setTimeout(() => {
-        box.classList.add('hidden');
-      }, 4000);
+      window.feedbackTimer = setTimeout(() => box.classList.add('hidden'), 4000);
     }
 
-    // --- Scanner Kamera ---
+    // Kamera
     const btnStart = document.getElementById('btn-start-camera');
     const btnStop = document.getElementById('btn-stop-camera');
     const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -445,14 +396,9 @@
       try {
         html5QrCode = new Html5Qrcode("reader");
         cameraPlaceholder.classList.add('hidden');
-        
         await html5QrCode.start(
           { facingMode: "environment" },
-          {
-            fps: 15,
-            qrbox: { width: 220, height: 220 },
-            aspectRatio: 1.0
-          },
+          { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
           (decodedText) => {
             html5QrCode.pause(true);
             processAttendance(decodedText);
@@ -462,14 +408,13 @@
           },
           () => {}
         );
-
         isScanning = true;
         btnStart.disabled = true;
         btnStart.classList.add('opacity-50');
         btnStop.disabled = false;
         btnStop.classList.remove('opacity-50');
       } catch (err) {
-        alert("Gagal mengakses kamera. Pastikan izin kamera aktif pada browser.");
+        alert("Gagal membuka kamera. Pastikan izin kamera telah diberikan.");
         cameraPlaceholder.classList.remove('hidden');
       }
     });
@@ -487,14 +432,13 @@
       }
     });
 
-    // --- Manual Input ---
     document.getElementById('btn-manual-submit').addEventListener('click', () => {
       const input = document.getElementById('manual-id-input');
       processAttendance(input.value);
       input.value = '';
     });
 
-    // --- Navigasi Tab ---
+    // Navigasi Tab
     const navBtns = document.querySelectorAll('.nav-btn');
     const tabs = {
       'tab-scan': document.getElementById('tab-scan'),
@@ -505,10 +449,7 @@
     navBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const target = btn.dataset.tab;
-        
-        Object.keys(tabs).forEach(k => {
-          tabs[k].classList.add('hidden');
-        });
+        Object.keys(tabs).forEach(k => tabs[k].classList.add('hidden'));
         tabs[target].classList.remove('hidden');
 
         navBtns.forEach(b => {
@@ -526,89 +467,9 @@
       });
     });
 
-    // --- Form Jamaah & QR Generator ---
-    document.getElementById('btn-save-jamaah').addEventListener('click', () => {
-      const name = document.getElementById('form-name').value.trim();
-      let id = document.getElementById('form-id').value.trim();
-      const category = document.getElementById('form-category').value;
-
-      if (!name) {
-        alert('Nama harus diisi!');
-        return;
-      }
-      if (!id) {
-        id = 'JMH-' + Math.floor(100 + Math.random() * 900);
-      }
-
-      jamaahData.push({ id, name, category });
-      saveState();
-      showQrCard(id, name, category);
-
-      document.getElementById('form-name').value = '';
-      document.getElementById('form-id').value = '';
-      renderJamaahList();
-    });
-
-    // --- Fitur Download Template CSV & Import Data Jamaah ---
-    document.getElementById('btn-download-template').addEventListener('click', () => {
-      const template = "ID,Nama,Kategori\nJMH-101,Ahmad Santoso,Santri\nJMH-102,Siti Aminah,Santri\nJMH-103,Budi Utomo,Jamaah Umum";
-      const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = "template_import_jamaah.csv";
-      link.click();
-    });
-
-    const btnImport = document.getElementById('btn-import-csv');
-    const fileInput = document.getElementById('csv-file-input');
-
-    btnImport.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const text = event.target.result;
-        const lines = text.split(/\r\n|\n/);
-        let importedCount = 0;
-
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-
-          const cols = line.split(/[,;]/);
-          if (cols.length >= 2) {
-            const id = cols[0].replace(/['"]/g, '').trim();
-            const name = cols[1].replace(/['"]/g, '').trim();
-            const category = (cols[2] || 'Santri').replace(/['"]/g, '').trim();
-
-            if (id && name) {
-              const existingIdx = jamaahData.findIndex(j => j.id.toLowerCase() === id.toLowerCase());
-              if (existingIdx !== -1) {
-                jamaahData[existingIdx] = { id, name, category };
-              } else {
-                jamaahData.push({ id, name, category });
-              }
-              importedCount++;
-            }
-          }
-        }
-
-        saveState();
-        renderJamaahList();
-        alert(`Berhasil mengimpor ${importedCount} data jamaah!`);
-        fileInput.value = '';
-      };
-
-      reader.readAsText(file);
-    });
-
     function showQrCard(id, name, category) {
       const box = document.getElementById('qr-preview-box');
       const container = document.getElementById('qrcode-container');
-      
       container.innerHTML = '';
       new QRCode(container, {
         text: id,
@@ -617,7 +478,6 @@
         colorDark: "#047857",
         colorLight: "#ffffff"
       });
-
       document.getElementById('card-preview-name').textContent = name;
       document.getElementById('card-preview-role').textContent = category;
       document.getElementById('card-preview-id').textContent = 'ID: ' + id;
@@ -634,7 +494,7 @@
       container.innerHTML = '';
 
       if (jamaahData.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 py-3 text-center">Belum ada jamaah.</p>';
+        container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Sedang memuat data dari Sheet2...</p>';
         return;
       }
 
@@ -682,23 +542,17 @@
     function renderStats() {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      
       const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
       document.getElementById('today-count').textContent = todayLogs.length;
       document.getElementById('ontime-count').textContent = todayLogs.filter(l => l.status === 'Tepat Waktu').length;
     }
 
     document.getElementById('btn-export-csv').addEventListener('click', () => {
-      if (logsData.length === 0) {
-        alert('Tidak ada data presensi untuk diunduh.');
-        return;
-      }
-
+      if (logsData.length === 0) return alert('Tidak ada data presensi.');
       let csv = 'ID Log,ID Jamaah,Nama,Kategori,Sholat,Tanggal,Waktu,Status\n';
       logsData.forEach(r => {
         csv += `"${r.id}","${r.jamaahId}","${r.name}","${r.category}","${r.prayer}","${parseDateNormalized(r.date)}","${r.time}","${r.status}"\n`;
       });
-
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
