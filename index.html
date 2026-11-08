@@ -217,20 +217,30 @@
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
     }
 
-    // --- Normalisasi Format Tanggal Google Sheets ---
+    // --- Normalisasi Format Tanggal Kebal Format Google Sheets ---
     function parseDateNormalized(rawDate) {
       if (!rawDate) return '';
       const str = String(rawDate).trim();
-      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        return str;
+      
+      // Jika format sudah YYYY-MM-DD
+      const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (matchIso) {
+        return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
       }
-      const d = new Date(str);
-      if (!isNaN(d.getTime())) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
+
+      // Jika format string panjang bawaan Sheets: "Sun Nov 08 2026..."
+      const months = {
+        Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06',
+        Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12'
+      };
+      const matchGmt = str.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+      if (matchGmt && months[matchGmt[1]]) {
+        const m = months[matchGmt[1]];
+        const d = String(matchGmt[2]).padStart(2, '0');
+        const y = matchGmt[3];
+        return `${y}-${m}-${d}`;
       }
+
       return str;
     }
 
