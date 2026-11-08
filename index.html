@@ -120,6 +120,17 @@
           <button id="btn-save-jamaah" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold text-white transition">
             Simpan & Buat Kartu QR
           </button>
+
+          <!-- Input File Tersembunyi & Tombol Import CSV -->
+          <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+          <div class="flex gap-2 pt-1">
+            <button id="btn-import-csv" type="button" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 flex items-center justify-center gap-1.5 transition">
+              📥 Import CSV Jamaah
+            </button>
+            <button id="btn-download-template" type="button" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-xl text-[11px] text-slate-300 transition">
+              📄 Unduh Format
+            </button>
+          </div>
         </div>
       </div>
 
@@ -222,13 +233,11 @@
       if (!rawDate) return '';
       const str = String(rawDate).trim();
       
-      // Jika format sudah YYYY-MM-DD
       const matchIso = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (matchIso) {
         return `${matchIso[1]}-${matchIso[2]}-${matchIso[3]}`;
       }
 
-      // Jika format string panjang bawaan Sheets: "Sun Nov 08 2026..."
       const months = {
         Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06',
         Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12'
@@ -538,6 +547,62 @@
       document.getElementById('form-name').value = '';
       document.getElementById('form-id').value = '';
       renderJamaahList();
+    });
+
+    // --- Fitur Download Template CSV & Import Data Jamaah ---
+    document.getElementById('btn-download-template').addEventListener('click', () => {
+      const template = "ID,Nama,Kategori\nJMH-101,Ahmad Santoso,Santri\nJMH-102,Siti Aminah,Santri\nJMH-103,Budi Utomo,Jamaah Umum";
+      const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "template_import_jamaah.csv";
+      link.click();
+    });
+
+    const btnImport = document.getElementById('btn-import-csv');
+    const fileInput = document.getElementById('csv-file-input');
+
+    btnImport.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const text = event.target.result;
+        const lines = text.split(/\r\n|\n/);
+        let importedCount = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          const cols = line.split(/[,;]/);
+          if (cols.length >= 2) {
+            const id = cols[0].replace(/['"]/g, '').trim();
+            const name = cols[1].replace(/['"]/g, '').trim();
+            const category = (cols[2] || 'Santri').replace(/['"]/g, '').trim();
+
+            if (id && name) {
+              const existingIdx = jamaahData.findIndex(j => j.id.toLowerCase() === id.toLowerCase());
+              if (existingIdx !== -1) {
+                jamaahData[existingIdx] = { id, name, category };
+              } else {
+                jamaahData.push({ id, name, category });
+              }
+              importedCount++;
+            }
+          }
+        }
+
+        saveState();
+        renderJamaahList();
+        alert(`Berhasil mengimpor ${importedCount} data jamaah!`);
+        fileInput.value = '';
+      };
+
+      reader.readAsText(file);
     });
 
     function showQrCard(id, name, category) {
