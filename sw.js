@@ -1,4 +1,4 @@
-const CACHE_NAME = 'absensi-jamaah-v3';
+const CACHE_NAME = 'absensi-jamaah-v4'; // Ganti v3 jadi v4
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
