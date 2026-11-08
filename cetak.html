@@ -3,20 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cetak Kartu QR Jamaah - Kertas A4</title>
+  <title>Cetak Kartu QR Jamaah</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
-    /* Ukuran Standar Kartu: Rasio Kartu ID Card (sekitar 8.5 cm x 5.4 cm) */
     .card-print {
       width: 8.5cm;
       height: 5.4cm;
       page-break-inside: avoid;
     }
 
-    /* Pengaturan Khusus Halaman Cetak Kertas A4 */
     @media print {
       body {
         background: white !important;
@@ -35,7 +33,11 @@
         width: 100% !important;
       }
       .card-print {
-        border: 1px dashed #94a3b8 !important; /* Garis panduan potong gunting */
+        border: 1px dashed #94a3b8 !important;
+      }
+      /* Sembunyikan tombol cetak satuan internal saat diprint */
+      .card-action-btn {
+        display: none !important;
       }
       @page {
         size: A4 portrait;
@@ -46,21 +48,31 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4">
 
-  <!-- Header Navigasi & Kontrol (Tidak Ikut Tercetak) -->
-  <header class="no-print max-w-4xl mx-auto mb-6 bg-slate-800 border border-slate-700 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
-    <div>
-      <h1 class="text-base font-bold text-white flex items-center gap-2">
-        <span>🖨️</span> Cetak Kartu QR Presensi
-      </h1>
-      <p class="text-xs text-slate-400">Layout Kertas A4 (Muat 8–10 Kartu per Lembar siap potong)</p>
+  <!-- Header Kontrol & Pencarian (Tidak Ikut Tercetak) -->
+  <header class="no-print max-w-4xl mx-auto mb-6 bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3 shadow-lg">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div>
+        <h1 class="text-base font-bold text-white flex items-center gap-2">
+          <span>🖨️</span> Cetak Kartu Presensi
+        </h1>
+        <p class="text-xs text-slate-400">Bisa cetak massal (semua) atau cari nama anak untuk cetak satuan.</p>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <a href="./index.html" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition">
+          ⬅️ Kembali ke App
+        </a>
+        <button id="btn-print-all" onclick="printAll()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow transition flex items-center gap-1.5">
+          🖨️ Cetak Semua (A4)
+        </button>
+      </div>
     </div>
-    
-    <div class="flex items-center gap-2">
-      <a href="./index.html" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition">
-        ⬅️ Kembali ke App
-      </a>
-      <button onclick="window.print()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow transition flex items-center gap-1.5">
-        🖨️ Cetak / Simpan PDF
+
+    <!-- Kolom Cari Nama / ID -->
+    <div class="pt-2 border-t border-slate-700/60 flex gap-2">
+      <input type="text" id="search-input" placeholder="🔍 Cari nama atau ID santri yang kartunya hilang..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
+      <button id="btn-reset-search" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs text-slate-300 font-medium">
+        Tampilkan Semua
       </button>
     </div>
   </header>
@@ -74,74 +86,122 @@
       <p class="text-sm font-medium">Mengambil database jamaah dari Google Sheets...</p>
     </div>
 
-    <!-- Wadah Grid Kartu A4 (2 Kolom) -->
+    <!-- Wadah Grid Kartu -->
     <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center"></div>
 
   </main>
 
   <script>
-    // URL Google Apps Script yang sama
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszfOTv1q99BRO8skYi5ueiN16wmogFbTZEYjop4nIMGOGi_AtXfngea_ojoNjwBTU/exec";
+    let allJamaah = [];
 
     window.handleCloudMaster = function(res) {
       document.getElementById('loading-state').classList.add('hidden');
+      if (res && Array.isArray(res.jamaah)) {
+        allJamaah = res.jamaah;
+        renderCards(allJamaah);
+      }
+    };
+
+    function renderCards(list) {
       const container = document.getElementById('cards-container');
       container.innerHTML = '';
 
-      if (!res || !Array.isArray(res.jamaah) || res.jamaah.length === 0) {
-        container.innerHTML = '<p class="col-span-2 text-center py-8 text-rose-500 text-sm font-semibold">Tidak ada data di tab Database Jamaah.</p>';
+      if (list.length === 0) {
+        container.innerHTML = '<p class="col-span-2 text-center py-8 text-rose-500 text-sm font-semibold">Santri/Jamaah tidak ditemukan.</p>';
         return;
       }
 
-      res.jamaah.forEach((person, index) => {
-        // Kartu Elemen
+      list.forEach((person, index) => {
         const card = document.createElement('div');
+        card.id = `card-node-${person.id}`;
         card.className = 'card-print bg-white border border-slate-300 rounded-xl p-3 flex flex-col justify-between relative shadow-sm overflow-hidden';
         
-        const qrId = 'qr-item-' + index;
+        const qrId = 'qr-item-' + person.id;
 
         card.innerHTML = `
+          <!-- Tombol Cetak Satuan (Hanya Tampil di Layar, Hilang saat Diprint) -->
+          <button onclick="printSingle('${person.id}')" title="Cetak kartu ini saja" class="card-action-btn no-print absolute top-1.5 right-1.5 px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold shadow transition">
+            🖨️ Cetak Ini
+          </button>
+
           <!-- Header Kartu -->
-          <div class="flex items-center justify-between border-b border-emerald-800/20 pb-1.5">
+          <div class="flex items-center justify-between border-b border-emerald-800/20 pb-1.5 pr-16">
             <div class="flex items-center gap-1.5">
               <span class="text-base">🕌</span>
               <span class="text-[11px] font-black tracking-tight text-emerald-800 uppercase">KARTU PRESENSI SHOLAT</span>
             </div>
-            <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">${person.category}</span>
           </div>
 
-          <!-- Bagian Isi (QR Code + Detail Nama) -->
+          <!-- Bagian Isi -->
           <div class="flex items-center gap-3 my-auto py-1">
             <div id="${qrId}" class="p-1 bg-white border border-slate-200 rounded-lg shrink-0 flex items-center justify-center"></div>
             
             <div class="flex-1 min-w-0">
               <p class="text-xs font-black text-slate-800 truncate leading-tight">${person.name}</p>
-              <p class="text-[11px] font-mono font-bold text-emerald-700 mt-1">${person.id}</p>
-              <p class="text-[8px] text-slate-400 mt-1.5 leading-tight">Tunjukkan barcode ini kepada petugas scanner saat memasuki masjid/mushola.</p>
+              <p class="text-[11px] font-mono font-bold text-emerald-700 mt-0.5">${person.id}</p>
+              <p class="text-[8px] text-slate-400 mt-1 leading-tight">Tunjukkan barcode ini kepada petugas scanner saat memasuki mushola.</p>
             </div>
           </div>
 
           <!-- Footer Kartu -->
           <div class="border-t border-slate-100 pt-1 text-[8px] text-slate-400 flex justify-between items-center">
             <span>Pondok Pesantren Tahfidzul Qur'an Al Husna</span>
-            <span class="font-mono">${person.id}</span>
+            <span class="font-mono font-bold text-slate-500">${person.id}</span>
           </div>
         `;
 
         container.appendChild(card);
 
-        // Generate QR Code untuk masing-masing kartu
+        // QR Code Generator
         new QRCode(document.getElementById(qrId), {
-          text: person.id,
+          text: String(person.id),
           width: 80,
           height: 80,
           colorDark: "#065f46",
           colorLight: "#ffffff"
         });
       });
-    };
+    }
 
-    // Ambil Data via JSONP
+    // --- Cetak Semua Kartu ---
+    function printAll() {
+      renderCards(allJamaah);
+      setTimeout(() => window.print(), 300);
+    }
+
+    // --- Cetak Hanya Satu Kartu Anak yang Hilang ---
+    function printSingle(id) {
+      const single = allJamaah.filter(p => String(p.id).trim() === String(id).trim());
+      renderCards(single);
+      setTimeout(() => {
+        window.print();
+        // Setelah dialog print ditutup, kembalikan ke daftar semua kartu
+        setTimeout(() => renderCards(allJamaah), 1000);
+      }, 300);
+    }
+
+    // --- Filter Pencarian Cepat ---
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        renderCards(allJamaah);
+        return;
+      }
+      const filtered = allJamaah.filter(p => 
+        String(p.name).toLowerCase().includes(q) || 
+        String(p.id).toLowerCase().includes(q)
+      );
+      renderCards(filtered);
+    });
+
+    document.getElementById('btn-reset-search').addEventListener('click', () => {
+      searchInput.value = '';
+      renderCards(allJamaah);
+    });
+
+    // Ambil Data Google Sheets via JSONP
     function loadData() {
       const script = document.createElement('script');
       script.src = SCRIPT_URL + '?callback=handleCloudMaster&_t=' + Date.now();
