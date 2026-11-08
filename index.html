@@ -217,8 +217,33 @@
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
     function saveState() {
-      localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
+  localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
+  localStorage.setItem('absensi_logs', JSON.stringify(logsData));
+} // <--- Tambahkan kurung tutup ini di sini
+
+// --- Fungsi Tarik Data Otomatis dari Cloud ---
+async function syncFromCloud() {
+  if (!SCRIPT_URL) return;
+  try {
+    const res = await fetch(SCRIPT_URL);
+    const result = await res.json();
+    if (result.status === 'success' && Array.isArray(result.data)) {
+      logsData = result.data;
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
+      renderLogs();
+      renderStats();
+      console.log('Sinkronisasi cloud berhasil: ' + logsData.length + ' data masuk.');
+    }
+  } catch (err) {
+    console.warn('Gagal sinkron data cloud, memakai offline storage:', err);
+  }
+}
+
+// Panggil saat aplikasi pertama kali dibuka
+syncFromCloud();
+
+// Auto-sync otomatis setiap 15 detik agar antar-HP selalu update
+setInterval(syncFromCloud, 15000);
     }
 
     // --- Audio Feedback (Web Audio API) ---
