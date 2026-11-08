@@ -294,6 +294,7 @@
     });
 
     // --- Logika Pemrosesan Absensi ---
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszfOTv1q99BRO8skYi5ueiN16wmogFbTZEYjop4nIMGOGi_AtXfngea_ojoNjwBTU/exec";
     function processAttendance(jamaahId) {
       const cleanId = (jamaahId || '').trim();
       if (!cleanId) return;
@@ -339,6 +340,21 @@
 
       logsData.unshift(newRecord);
       saveState();
+      // Kirim data ke Cloud Google Sheets
+      if (SCRIPT_URL) {
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newRecord)
+        }).then(() => {
+          console.log('Presensi berhasil dikirim ke Google Sheets');
+        }).catch(err => {
+          console.error('Gagal sinkron cloud:', err);
+        });
+      }
       
       // Feedback berhasil
       showFeedback(true, 'Presensi Masuk', `${person.name} (${prayer})`);
