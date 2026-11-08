@@ -217,6 +217,23 @@
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
     }
 
+    // --- Normalisasi Format Tanggal Google Sheets ---
+    function parseDateNormalized(rawDate) {
+      if (!rawDate) return '';
+      const str = String(rawDate).trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+      }
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      }
+      return str;
+    }
+
     // --- Sinkronisasi Cloud Dua Arah ---
     async function syncFromCloud() {
       if (!SCRIPT_URL) return;
@@ -313,7 +330,8 @@
       if (!cleanId) return;
 
       const prayer = document.getElementById('prayer-select').value;
-      const todayStr = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       const person = jamaahData.find(j => j.id.toLowerCase() === cleanId.toLowerCase());
       if (!person) {
@@ -325,7 +343,7 @@
 
       const alreadyCheckedIn = logsData.some(log => 
         log.jamaahId === person.id && 
-        log.date === todayStr && 
+        parseDateNormalized(log.date) === todayStr && 
         log.prayer === prayer
       );
 
@@ -336,7 +354,6 @@
         return;
       }
 
-      const now = new Date();
       const newRecord = {
         id: 'LOG-' + Date.now(),
         jamaahId: person.id,
@@ -577,7 +594,7 @@
         div.innerHTML = `
           <div>
             <p class="font-bold text-slate-200">${log.name}</p>
-            <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.date} ${log.time}</p>
+            <p class="text-slate-400 text-[11px]">${log.prayer} • ${parseDateNormalized(log.date)} ${log.time}</p>
           </div>
           <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700">
             ${log.status}
@@ -588,8 +605,10 @@
     }
 
     function renderStats() {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const todayLogs = logsData.filter(l => l.date === todayStr);
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
       document.getElementById('today-count').textContent = todayLogs.length;
       document.getElementById('ontime-count').textContent = todayLogs.filter(l => l.status === 'Tepat Waktu').length;
     }
@@ -602,7 +621,7 @@
 
       let csv = 'ID Log,ID Jamaah,Nama,Kategori,Sholat,Tanggal,Waktu,Status\n';
       logsData.forEach(r => {
-        csv += `"${r.id}","${r.jamaahId}","${r.name}","${r.category}","${r.prayer}","${r.date}","${r.time}","${r.status}"\n`;
+        csv += `"${r.id}","${r.jamaahId}","${r.name}","${r.category}","${r.prayer}","${parseDateNormalized(r.date)}","${r.time}","${r.status}"\n`;
       });
 
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
