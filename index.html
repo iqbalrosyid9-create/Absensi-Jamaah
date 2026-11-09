@@ -334,6 +334,11 @@
       return str;
     }
 
+    function getSantriMasterName(id) {
+      const p = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(id).trim().toLowerCase());
+      return p ? p.name : '';
+    }
+
     window.setAttendanceStatus = function(status) {
       currentCheckInStatus = status;
 
@@ -394,7 +399,13 @@
           jamaahData = res.jamaah;
         }
         if (Array.isArray(res.logs)) {
-          logsData = res.logs;
+          // Normalisasi logs agar nama santri tidak pernah hilang
+          logsData = res.logs.map(l => {
+            if (!l.name || String(l.name).trim() === '') {
+              l.name = getSantriMasterName(l.jamaahId) || ('Santri ' + l.jamaahId);
+            }
+            return l;
+          });
         }
         saveState();
         renderJamaahList();
@@ -849,16 +860,18 @@
       renderRekapView();
     });
 
-    // Event Pencarian di Rekap
     document.getElementById('rekap-search-input').addEventListener('input', () => {
       renderRekapView();
     });
 
-    // --- FUNGSI EDIT / KOREKSI STATUS LAPORAN (PERMANEN KE SPREADSHEET) ---
+    // --- FUNGSI MODAL KOREKSI STATUS ---
     window.openEditModal = function(jamaahId, name, prayer, date, currentStatus) {
-      activeEditingRecord = { jamaahId, name, prayer, date };
-      document.getElementById('edit-modal-subtitle').textContent = `${name} (${jamaahId}) • Sholat ${prayer} • ${date}`;
-      document.getElementById('edit-select-status').value = currentStatus;
+      // Pastikan nama santri selalu terisi
+      const validName = (name && String(name).trim() !== '') ? name : (getSantriMasterName(jamaahId) || ('Santri ' + jamaahId));
+      activeEditingRecord = { jamaahId, name: validName, prayer, date };
+      
+      document.getElementById('edit-modal-subtitle').textContent = `${validName} (${jamaahId}) • Sholat ${prayer} • ${date}`;
+      document.getElementById('edit-select-status').value = currentStatus || 'Tepat Waktu';
       document.getElementById('modal-edit-status').classList.remove('hidden');
     };
 
@@ -872,12 +885,13 @@
       const newStatus = document.getElementById('edit-select-status').value;
       const { jamaahId, prayer, date, name } = activeEditingRecord;
 
-      // 1. Update di memori lokal langsung
+      // 1. Perbarui data lokal langsung
       let found = false;
       logsData.forEach(l => {
         const idMatch = String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase();
         if (idMatch && l.prayer === prayer && parseDateNormalized(l.date) === date) {
           l.status = newStatus;
+          l.name = name;
           found = true;
         }
       });
@@ -906,9 +920,9 @@
         const payload = JSON.stringify({
           action: 'update_status',
           jamaahId: String(jamaahId).trim(),
+          name: name,
           prayer: prayer,
           date: date,
-          name: name,
           newStatus: newStatus
         });
 
@@ -921,7 +935,7 @@
           setTimeout(() => {
             syncFromCloud();
             showFeedback('success', 'Tersimpan Permanen', `Status ${name} berhasil disimpan di Spreadsheet.`);
-          }, 2500);
+          }, 2000);
         }).catch(err => {
           console.error('Gagal koreksi status:', err);
           showFeedback('error', 'Gagal Terhubung', 'Periksa koneksi internet ke Google Sheets.');
@@ -1005,7 +1019,13 @@
         const uniquePresentMap = new Map();
         rawPresentLogs.forEach(log => {
           const cleanId = String(log.jamaahId).trim().toLowerCase();
-          if (!uniquePresentMap.has(cleanId)) uniquePresentMap.set(cleanId, log);
+          if (!uniquePresentMap.has(cleanId)) {
+            // Pastikan nama selalu terisi
+            if (!log.name || String(log.name).trim() === '') {
+              log.name = getSantriMasterName(log.jamaahId) || ('Santri ' + log.jamaahId);
+            }
+            uniquePresentMap.set(cleanId, log);
+          }
         });
 
         const presentLogs = Array.from(uniquePresentMap.values());
@@ -1066,17 +1086,19 @@
             else if (log.status === 'Sakit') badgeStyle = 'bg-purple-950 text-purple-300 border-purple-700';
             else if (log.status === 'Alfa') badgeStyle = 'bg-rose-950 text-rose-300 border-rose-700';
 
+            const displayName = log.name || getSantriMasterName(log.jamaahId) || ('Santri ' + log.jamaahId);
+
             container.innerHTML += `
               <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
                 <div>
-                  <p class="font-bold text-slate-200">${idx + 1}. ${log.name}</p>
+                  <p class="font-bold text-slate-200">${idx + 1}. ${displayName}</p>
                   <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.time}</p>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}">
                     ${log.status}
                   </span>
-                  <button onclick="openEditModal('${log.jamaahId}', '${log.name}', '${log.prayer}', '${parseDateNormalized(log.date)}', '${log.status}')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
+                  <button onclick="openEditModal('${log.jamaahId}', '${displayName}', '${log.prayer}', '${parseDateNormalized(log.date)}', '${log.status}')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
                     ✏️
                   </button>
                 </div>
