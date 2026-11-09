@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#047857">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Absensi Sholat Jamaah</title>
+  <title>Presensi Sholat - PPTQ Al Husna Lestari</title>
   
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/svg+xml" href="./icon.svg">
@@ -31,17 +31,18 @@
   <!-- Header -->
   <header class="bg-emerald-800 border-b border-emerald-700 sticky top-0 z-40 shadow-md">
     <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-amber-300 shadow">
+      <div class="flex items-center space-x-2.5 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-amber-300 shadow shrink-0 text-lg">
           🕌
         </div>
-        <div>
-          <h1 class="text-base font-bold leading-tight">Presensi Jamaah</h1>
-          <p id="live-clock" class="text-xs text-emerald-200">Memuat jam...</p>
+        <div class="min-w-0">
+          <h1 class="text-sm font-bold leading-tight truncate text-white">Presensi Jamaah</h1>
+          <p class="text-[10px] text-emerald-200 truncate font-medium">PPTQ Al Husna Lestari</p>
+          <p id="live-clock" class="text-[9px] text-emerald-300 font-mono">Memuat jam...</p>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <button id="btn-sync-manual" class="px-2.5 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center gap-1">
+      <div class="flex items-center space-x-1.5 shrink-0">
+        <button id="btn-sync-manual" class="px-2 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center gap-1">
           🔄 Sync
         </button>
         <span id="current-prayer-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950 text-emerald-300 border border-emerald-600">
@@ -56,6 +57,16 @@
     
     <!-- Tab 1: Scanner View -->
     <section id="tab-scan" class="space-y-4">
+      
+      <!-- Banner Identitas Pesantren di Menu Scan -->
+      <div class="bg-gradient-to-r from-emerald-900 to-slate-800 p-3.5 rounded-2xl border border-emerald-700/60 shadow-lg text-center space-y-0.5">
+        <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Sistem Presensi Sholat</span>
+        <h2 class="text-sm font-black text-amber-300 leading-snug">
+          Pondok Pesantren Tahfidzul Qur'an Al Husna Lestari
+        </h2>
+        <p class="text-[10px] text-slate-300">Pindai kartu santri atau gunakan input manual di bawah</p>
+      </div>
+
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg space-y-3">
         
         <!-- Pilihan Sesi Sholat -->
@@ -184,7 +195,7 @@
         </button>
       </div>
 
-      <!-- Selector Bulan Khusus (Muncul saat mode Bulanan aktif) -->
+      <!-- Selector Bulan Khusus -->
       <div id="month-picker-container" class="hidden bg-slate-800 p-2.5 rounded-2xl border border-slate-700 flex items-center justify-between gap-2">
         <label for="month-select" class="text-xs font-semibold text-slate-400 shrink-0">Pilih Bulan:</label>
         <select id="month-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 flex-1"></select>
@@ -193,7 +204,7 @@
       <!-- 3 Kartu Angka Statistik -->
       <div class="grid grid-cols-3 gap-2">
         <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-1" class="text-[11px] text-slate-400">Hadir</span>
+          <span id="label-stat-1" class="text-[11px] text-slate-400">Hadir/Izin</span>
           <p id="today-count" class="text-lg font-bold text-emerald-400 mt-0.5">0</p>
         </div>
         <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
@@ -258,7 +269,7 @@
     
     let currentPeriod = 'today';
     let currentRekapFilter = 'absent';
-    let currentCheckInStatus = 'Tepat Waktu'; // 'Tepat Waktu', 'Masbuq', 'Izin Pulang', 'Sakit'
+    let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
@@ -292,7 +303,6 @@
       return str;
     }
 
-    // --- PENGATUR STATUS KEHADIRAN (4 STATUS) ---
     window.setAttendanceStatus = function(status) {
       currentCheckInStatus = status;
 
@@ -301,12 +311,10 @@
       const btnPulang = document.getElementById('btn-st-pulang');
       const btnSakit = document.getElementById('btn-st-sakit');
 
-      // Reset semua tombol ke default tidak aktif
       [btnTepat, btnMasbuq, btnPulang, btnSakit].forEach(b => {
         b.className = 'py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition text-center';
       });
 
-      // Beri warna sesuai status aktif
       if (status === 'Tepat Waktu') {
         btnTepat.className = 'py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow text-center';
       } else if (status === 'Masbuq') {
@@ -318,7 +326,6 @@
       }
     };
 
-    // --- POPULASI OPSI BULAN LAMPAU ---
     function populateMonthDropdown() {
       const select = document.getElementById('month-select');
       const currentSelected = select.value;
@@ -350,7 +357,6 @@
       return new Date(y, m, 0).getDate();
     }
 
-    // --- SINKRONISASI MASTER GOOGLE SHEETS ---
     window.handleCloudMaster = function(res) {
       if (res && res.status === 'success') {
         if (Array.isArray(res.jamaah) && res.jamaah.length > 0) {
@@ -384,7 +390,6 @@
       showFeedback('success', 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
     });
 
-    // Audio & Haptic Feedback
     function playBeep(type = 'success') {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -443,7 +448,6 @@
       if (currentPeriod === 'today') renderRekapView();
     });
 
-    // --- PROSES ABSENSI DENGAN 4 STATUS ---
     function processAttendance(jamaahId) {
       const cleanId = String(jamaahId || '').trim();
       if (!cleanId) return;
@@ -487,7 +491,7 @@
         prayer: prayer,
         date: todayStr,
         time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: currentCheckInStatus // 'Tepat Waktu', 'Masbuq', 'Izin Pulang', atau 'Sakit'
+        status: currentCheckInStatus
       };
 
       logsData.unshift(newRecord);
@@ -603,7 +607,7 @@
       input.value = '';
     });
 
-    // Navigasi Tab Utama
+    // Navigasi Tab
     const navBtns = document.querySelectorAll('.nav-btn');
     const tabs = {
       'tab-scan': document.getElementById('tab-scan'),
@@ -632,7 +636,6 @@
       });
     });
 
-    // Preview Kartu & Cetak Satuan
     function showQrCard(id, name, category) {
       const box = document.getElementById('qr-preview-box');
       const container = document.getElementById('qrcode-container');
@@ -709,7 +712,7 @@
               </div>
             </div>
             <div class="footer">
-              <span>Pondok Pesantren Tahfidzul Qur'an Al Husna</span>
+              <span>Pondok Pesantren Tahfidzul Qur'an Al Husna Lestari</span>
               <span>${idStr}</span>
             </div>
           </div>
@@ -748,7 +751,7 @@
       });
     }
 
-    // --- REKAP EVALUASI PERIODIK ---
+    // --- REKAP EVALUASI ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
@@ -882,7 +885,7 @@
           });
         }
 
-      // MODE 2: MINGGUAN (7 HARI) ATAU BULANAN
+      // MODE 2: MINGGUAN / BULANAN
       } else {
         let targetPerSantri = 0;
         let validLogs = [];
@@ -911,7 +914,6 @@
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           
-          // Total sesi tercatat unik per hari + sholat
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const totalTercatat = uniqueSessions.size;
 
@@ -920,7 +922,6 @@
           const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
           const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
 
-          // Alfa hanya dihitung jika santri tidak hadir dan TANPA keterangan izin pulang / sakit
           const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
 
           return {
@@ -936,7 +937,6 @@
           };
         });
 
-        // Urutkan dari alfa terbanyak, lalu masbuq terbanyak
         ranking.sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
         const totalHadirAll = ranking.reduce((acc, cur) => acc + cur.hadir, 0);
@@ -972,7 +972,7 @@
       }
     }
 
-    // Tombol Salin WA Menyesuaikan Status Lengkap
+    // Salin Laporan WhatsApp
     document.getElementById('btn-copy-absent').addEventListener('click', () => {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -991,7 +991,7 @@
           return alert('Semua santri hadir tepat waktu/masbuq.');
         }
 
-        text = `*LAPORAN PRESENSI SHOLAT*\n📅 Tanggal: ${todayStr}\n🕌 Sesi: ${prayer}\n\n`;
+        text = `*LAPORAN PRESENSI SHOLAT*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n✨ Sesi: Sholat ${prayer}\n\n`;
 
         if (absentList.length > 0) {
           text += `❌ *BELUM HADIR / ALFA (${absentList.length} orang):*\n`;
@@ -1067,7 +1067,7 @@
         const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
         if (listCatatan.length === 0) return alert('Semua santri disiplin, tidak ada catatan.');
 
-        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
+        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
         listCatatan.forEach((r, i) => {
           let ket = [];
           if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
