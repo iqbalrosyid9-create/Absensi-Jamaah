@@ -58,7 +58,7 @@
     <section id="tab-scan" class="space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg space-y-3">
         
-        <!-- Pilihan Sesi Sholat & Mode Presensi (Tepat Waktu / Masbuq) -->
+        <!-- Pilihan Sesi Sholat -->
         <div class="flex items-center justify-between">
           <label class="text-xs font-semibold text-slate-400">PILIH SESI SHOLAT</label>
           <select id="prayer-select" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500">
@@ -70,14 +70,23 @@
           </select>
         </div>
 
-        <!-- Tombol Status Kehadiran: Tepat Waktu vs Masbuq -->
-        <div class="bg-slate-900/80 p-1 rounded-xl border border-slate-700 flex text-xs">
-          <button id="btn-status-on-time" onclick="setAttendanceStatus('Tepat Waktu')" class="flex-1 py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow flex items-center justify-center gap-1">
-            <span>✅</span> Tepat Waktu
-          </button>
-          <button id="btn-status-masbuq" onclick="setAttendanceStatus('Masbuq')" class="flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-1">
-            <span>⚠️</span> Masbuq
-          </button>
+        <!-- 4 Tombol Pilihan Status Presensi -->
+        <div>
+          <label class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Status Kehadiran Santri:</label>
+          <div class="grid grid-cols-4 gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-[11px]">
+            <button id="btn-st-tepat" onclick="setAttendanceStatus('Tepat Waktu')" class="py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow text-center">
+              ✅ Tepat
+            </button>
+            <button id="btn-st-masbuq" onclick="setAttendanceStatus('Masbuq')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition text-center">
+              ⚠️ Masbuq
+            </button>
+            <button id="btn-st-pulang" onclick="setAttendanceStatus('Izin Pulang')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-blue-300 transition text-center">
+              🏠 Pulang
+            </button>
+            <button id="btn-st-sakit" onclick="setAttendanceStatus('Sakit')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-purple-300 transition text-center">
+              💊 Sakit
+            </button>
+          </div>
         </div>
 
         <div class="relative bg-slate-950 rounded-xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
@@ -247,9 +256,9 @@
     let html5QrCode = null;
     let isScanning = false;
     
-    let currentPeriod = 'today'; // 'today', 'week', 'month'
+    let currentPeriod = 'today';
     let currentRekapFilter = 'absent';
-    let currentCheckInStatus = 'Tepat Waktu'; // 'Tepat Waktu' atau 'Masbuq'
+    let currentCheckInStatus = 'Tepat Waktu'; // 'Tepat Waktu', 'Masbuq', 'Izin Pulang', 'Sakit'
     let lastScanCooldown = {};
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
@@ -283,18 +292,29 @@
       return str;
     }
 
-    // --- PENGATURAN STATUS MASBUQ VS TEPAT WAKTU ---
+    // --- PENGATUR STATUS KEHADIRAN (4 STATUS) ---
     window.setAttendanceStatus = function(status) {
       currentCheckInStatus = status;
-      const btnOnTime = document.getElementById('btn-status-on-time');
-      const btnMasbuq = document.getElementById('btn-status-masbuq');
 
+      const btnTepat = document.getElementById('btn-st-tepat');
+      const btnMasbuq = document.getElementById('btn-st-masbuq');
+      const btnPulang = document.getElementById('btn-st-pulang');
+      const btnSakit = document.getElementById('btn-st-sakit');
+
+      // Reset semua tombol ke default tidak aktif
+      [btnTepat, btnMasbuq, btnPulang, btnSakit].forEach(b => {
+        b.className = 'py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition text-center';
+      });
+
+      // Beri warna sesuai status aktif
       if (status === 'Tepat Waktu') {
-        btnOnTime.className = 'flex-1 py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow flex items-center justify-center gap-1';
-        btnMasbuq.className = 'flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-1';
-      } else {
-        btnMasbuq.className = 'flex-1 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition shadow flex items-center justify-center gap-1';
-        btnOnTime.className = 'flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-emerald-400 transition flex items-center justify-center gap-1';
+        btnTepat.className = 'py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow text-center';
+      } else if (status === 'Masbuq') {
+        btnMasbuq.className = 'py-1.5 rounded-lg font-bold bg-amber-600 text-white transition shadow text-center';
+      } else if (status === 'Izin Pulang') {
+        btnPulang.className = 'py-1.5 rounded-lg font-bold bg-blue-600 text-white transition shadow text-center';
+      } else if (status === 'Sakit') {
+        btnSakit.className = 'py-1.5 rounded-lg font-bold bg-purple-600 text-white transition shadow text-center';
       }
     };
 
@@ -361,10 +381,10 @@
 
     document.getElementById('btn-sync-manual').addEventListener('click', () => {
       syncFromCloud();
-      showFeedback(true, 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
+      showFeedback('success', 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
     });
 
-    // Audio & Haptic
+    // Audio & Haptic Feedback
     function playBeep(type = 'success') {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -375,6 +395,8 @@
         
         let freq = 880;
         if (type === 'masbuq') freq = 550;
+        else if (type === 'pulang') freq = 650;
+        else if (type === 'sakit') freq = 450;
         else if (type === 'error') freq = 320;
 
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
@@ -388,6 +410,7 @@
       if ('vibrate' in navigator) {
         if (type === 'success') navigator.vibrate([80, 50, 80]);
         else if (type === 'masbuq') navigator.vibrate([120, 80, 120]);
+        else if (type === 'pulang' || type === 'sakit') navigator.vibrate([100, 50, 100]);
         else navigator.vibrate(250);
       }
     }
@@ -420,7 +443,7 @@
       if (currentPeriod === 'today') renderRekapView();
     });
 
-    // --- PROSES ABSENSI DENGAN STATUS TEPAT WAKTU / MASBUQ ---
+    // --- PROSES ABSENSI DENGAN 4 STATUS ---
     function processAttendance(jamaahId) {
       const cleanId = String(jamaahId || '').trim();
       if (!cleanId) return;
@@ -450,7 +473,7 @@
       );
 
       if (alreadyCheckedIn) {
-        showFeedback('error', 'Sudah Absen', `${person.name} sudah absen sholat ${prayer}.`);
+        showFeedback('error', 'Sudah Absen', `${person.name} sudah tercatat pada sholat ${prayer}.`);
         playBeep('error');
         triggerHaptic('error');
         return;
@@ -464,7 +487,7 @@
         prayer: prayer,
         date: todayStr,
         time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: currentCheckInStatus // 'Tepat Waktu' atau 'Masbuq'
+        status: currentCheckInStatus // 'Tepat Waktu', 'Masbuq', 'Izin Pulang', atau 'Sakit'
       };
 
       logsData.unshift(newRecord);
@@ -482,10 +505,14 @@
         }).catch(err => console.error('Gagal kirim:', err));
       }
       
-      const isMasbuq = currentCheckInStatus === 'Masbuq';
-      showFeedback(isMasbuq ? 'masbuq' : 'success', isMasbuq ? 'Masbuq Tercatat' : 'Presensi Berhasil', `${person.name} (${prayer})`);
-      playBeep(isMasbuq ? 'masbuq' : 'success');
-      triggerHaptic(isMasbuq ? 'masbuq' : 'success');
+      let feedbackType = 'success';
+      if (currentCheckInStatus === 'Masbuq') feedbackType = 'masbuq';
+      else if (currentCheckInStatus === 'Izin Pulang') feedbackType = 'pulang';
+      else if (currentCheckInStatus === 'Sakit') feedbackType = 'sakit';
+
+      showFeedback(feedbackType, `${currentCheckInStatus} Tercatat`, `${person.name} (${prayer})`);
+      playBeep(feedbackType);
+      triggerHaptic(feedbackType);
     }
 
     function showFeedback(type, title, msg) {
@@ -494,7 +521,7 @@
       const titleEl = document.getElementById('feedback-title');
       const msgEl = document.getElementById('feedback-msg');
 
-      box.classList.remove('hidden', 'border-emerald-500', 'border-amber-500', 'border-rose-500', 'bg-emerald-950/40', 'bg-amber-950/40', 'bg-rose-950/40');
+      box.classList.remove('hidden', 'border-emerald-500', 'border-amber-500', 'border-blue-500', 'border-purple-500', 'border-rose-500', 'bg-emerald-950/40', 'bg-amber-950/40', 'bg-blue-950/40', 'bg-purple-950/40', 'bg-rose-950/40');
       
       if (type === 'success') {
         box.classList.add('border-emerald-500', 'bg-emerald-950/40');
@@ -504,6 +531,14 @@
         box.classList.add('border-amber-500', 'bg-amber-950/40');
         icon.textContent = '⚠️';
         titleEl.className = 'text-xs font-bold text-amber-400';
+      } else if (type === 'pulang') {
+        box.classList.add('border-blue-500', 'bg-blue-950/40');
+        icon.textContent = '🏠';
+        titleEl.className = 'text-xs font-bold text-blue-400';
+      } else if (type === 'sakit') {
+        box.classList.add('border-purple-500', 'bg-purple-950/40');
+        icon.textContent = '💊';
+        titleEl.className = 'text-xs font-bold text-purple-400';
       } else {
         box.classList.add('border-rose-500', 'bg-rose-950/40');
         icon.textContent = '❌';
@@ -713,7 +748,7 @@
       });
     }
 
-    // --- REKAP EVALUASI ---
+    // --- REKAP EVALUASI PERIODIK ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
@@ -731,7 +766,7 @@
         monthContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
-        document.getElementById('label-stat-1').textContent = 'Hadir';
+        document.getElementById('label-stat-1').textContent = 'Hadir/Izin';
         document.getElementById('label-stat-2').textContent = 'Belum Absen';
         document.getElementById('label-stat-3').textContent = 'Total Jamaah';
       } else if (period === 'week') {
@@ -808,7 +843,7 @@
 
         if (currentRekapFilter === 'absent') {
           if (absentList.length === 0) {
-            container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Alhamdulillah, semua santri sudah sholat ${prayer}!</p>`;
+            container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Alhamdulillah, semua santri sudah tercatat pada sholat ${prayer}!</p>`;
             return;
           }
           absentList.forEach((j, idx) => {
@@ -824,18 +859,22 @@
           });
         } else {
           if (presentLogs.length === 0) {
-            container.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">Belum ada santri yang absen pada sholat ${prayer}.</p>`;
+            container.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">Belum ada catatan pada sholat ${prayer}.</p>`;
             return;
           }
           presentLogs.forEach((log, idx) => {
-            const isMasbuq = log.status === 'Masbuq';
+            let badgeStyle = 'bg-emerald-950 text-emerald-300 border-emerald-700';
+            if (log.status === 'Masbuq') badgeStyle = 'bg-amber-950 text-amber-300 border-amber-700';
+            else if (log.status === 'Izin Pulang') badgeStyle = 'bg-blue-950 text-blue-300 border-blue-700';
+            else if (log.status === 'Sakit') badgeStyle = 'bg-purple-950 text-purple-300 border-purple-700';
+
             container.innerHTML += `
               <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
                 <div>
                   <p class="font-bold text-slate-200">${idx + 1}. ${log.name}</p>
                   <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.time}</p>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${isMasbuq ? 'bg-amber-950 text-amber-300 border border-amber-700' : 'bg-emerald-950 text-emerald-300 border border-emerald-700'}">
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}">
                   ${log.status}
                 </span>
               </div>
@@ -872,17 +911,26 @@
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           
+          // Total sesi tercatat unik per hari + sholat
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-          const hadirCount = uniqueSessions.size;
+          const totalTercatat = uniqueSessions.size;
+
           const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
-          const alfaCount = Math.max(0, targetPerSantri - hadirCount);
+          const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
+          const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
+          const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
+
+          // Alfa hanya dihitung jika santri tidak hadir dan TANPA keterangan izin pulang / sakit
+          const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
 
           return {
             id: santri.id,
             name: santri.name,
             category: santri.category,
-            hadir: hadirCount,
+            hadir: hadirMurniCount,
             masbuq: masbuqCount,
+            pulang: pulangCount,
+            sakit: sakitCount,
             alfa: alfaCount,
             target: targetPerSantri
           };
@@ -900,11 +948,18 @@
 
         ranking.forEach((r, idx) => {
           const isHighAlfa = r.alfa > (targetPerSantri * 0.2);
+          
+          let noteArr = [];
+          if (r.masbuq > 0) noteArr.push(`<span class="text-amber-400 font-bold">${r.masbuq}x Masbuq</span>`);
+          if (r.pulang > 0) noteArr.push(`<span class="text-blue-400 font-bold">${r.pulang}x Pulang</span>`);
+          if (r.sakit > 0) noteArr.push(`<span class="text-purple-400 font-bold">${r.sakit}x Sakit</span>`);
+          const noteStr = noteArr.length > 0 ? ` • ${noteArr.join(', ')}` : '';
+
           container.innerHTML += `
             <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border ${isHighAlfa ? 'border-rose-900/60' : 'border-slate-700/60'} text-xs">
               <div>
                 <p class="font-bold ${isHighAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${r.name}</p>
-                <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target} ${r.masbuq > 0 ? `• <span class="text-amber-400 font-bold">${r.masbuq}x Masbuq</span>` : ''}</p>
+                <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target}${noteStr}</p>
               </div>
               <div class="text-right">
                 <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${r.alfa > 0 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
@@ -917,7 +972,7 @@
       }
     }
 
-    // Tombol Salin WA
+    // Tombol Salin WA Menyesuaikan Status Lengkap
     document.getElementById('btn-copy-absent').addEventListener('click', () => {
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -929,11 +984,38 @@
         const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
         const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
 
-        if (absentList.length === 0) return alert('Semua santri sudah sholat.');
-        text = `*DAFTAR SANTRI BELUM SHOLAT*\n📅 Tanggal: ${todayStr}\n🕌 Sesi: ${prayer}\n⚠️ Jumlah: ${absentList.length} orang\n\n`;
-        absentList.forEach((j, i) => {
-          text += `${i + 1}. ${j.name} (${j.id})\n`;
-        });
+        const sakitList = rawPresentLogs.filter(l => l.status === 'Sakit');
+        const pulangList = rawPresentLogs.filter(l => l.status === 'Izin Pulang');
+
+        if (absentList.length === 0 && sakitList.length === 0 && pulangList.length === 0) {
+          return alert('Semua santri hadir tepat waktu/masbuq.');
+        }
+
+        text = `*LAPORAN PRESENSI SHOLAT*\n📅 Tanggal: ${todayStr}\n🕌 Sesi: ${prayer}\n\n`;
+
+        if (absentList.length > 0) {
+          text += `❌ *BELUM HADIR / ALFA (${absentList.length} orang):*\n`;
+          absentList.forEach((j, i) => {
+            text += `${i + 1}. ${j.name} (${j.id})\n`;
+          });
+          text += `\n`;
+        }
+
+        if (sakitList.length > 0) {
+          text += `💊 *SEDANG SAKIT (${sakitList.length} orang):*\n`;
+          sakitList.forEach((s, i) => {
+            text += `${i + 1}. ${s.name} (${s.jamaahId})\n`;
+          });
+          text += `\n`;
+        }
+
+        if (pulangList.length > 0) {
+          text += `🏠 *IZIN PULANG (${pulangList.length} orang):*\n`;
+          pulangList.forEach((p, i) => {
+            text += `${i + 1}. ${p.name} (${p.jamaahId})\n`;
+          });
+        }
+
       } else {
         const isMonth = currentPeriod === 'month';
         let targetPerSantri = 0;
@@ -962,24 +1044,38 @@
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-          const hadirCount = uniqueSessions.size;
+          const totalTercatat = uniqueSessions.size;
+
           const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
+          const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
+          const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
+          const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
+          const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
+
           return {
             name: santri.name,
             id: santri.id,
-            hadir: hadirCount,
+            hadir: hadirMurniCount,
             masbuq: masbuqCount,
-            alfa: Math.max(0, targetPerSantri - hadirCount),
+            pulang: pulangCount,
+            sakit: sakitCount,
+            alfa: alfaCount,
             target: targetPerSantri
           };
         }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
-        const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0);
-        if (listCatatan.length === 0) return alert('Semua santri disiplin, tidak ada yang alfa maupun masbuq.');
+        const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
+        if (listCatatan.length === 0) return alert('Semua santri disiplin, tidak ada catatan.');
 
         text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
         listCatatan.forEach((r, i) => {
-          text += `${i + 1}. ${r.name} (${r.id}) ➔ *${r.alfa}x Alfa*, ${r.masbuq}x Masbuq (Hadir: ${r.hadir}/${r.target})\n`;
+          let ket = [];
+          if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
+          if (r.masbuq > 0) ket.push(`${r.masbuq}x Masbuq`);
+          if (r.sakit > 0) ket.push(`${r.sakit}x Sakit`);
+          if (r.pulang > 0) ket.push(`${r.pulang}x Pulang`);
+
+          text += `${i + 1}. ${r.name} (${r.id}) ➔ ${ket.join(', ')} (Hadir: ${r.hadir}/${r.target})\n`;
         });
       }
 
