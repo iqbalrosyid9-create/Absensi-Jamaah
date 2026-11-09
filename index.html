@@ -159,8 +159,14 @@
           7 Hari (Mingguan)
         </button>
         <button id="btn-p-month" onclick="switchPeriod('month')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
-          Bulan Ini
+          Bulanan
         </button>
+      </div>
+
+      <!-- Selector Bulan Khusus (Muncul saat mode Bulanan aktif) -->
+      <div id="month-picker-container" class="hidden bg-slate-800 p-2.5 rounded-2xl border border-slate-700 flex items-center justify-between gap-2">
+        <label for="month-select" class="text-xs font-semibold text-slate-400 shrink-0">Pilih Bulan:</label>
+        <select id="month-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 flex-1"></select>
       </div>
 
       <!-- 3 Kartu Angka Statistik -->
@@ -191,11 +197,11 @@
             </button>
           </div>
 
-          <div id="periodic-header-title" class="hidden text-xs font-bold text-amber-400">
+          <div id="periodic-header-title" class="hidden text-xs font-bold text-amber-400 truncate">
             Evaluasi Disiplin Santri
           </div>
           
-          <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2.5 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1">
+          <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2.5 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1 shrink-0">
             📋 Salin WA
           </button>
         </div>
@@ -236,6 +242,11 @@
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
+    const namaBulanIndo = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
     function saveState() {
       localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
@@ -257,6 +268,40 @@
         return `${matchGmt[3]}-${months[matchGmt[1]]}-${String(matchGmt[2]).padStart(2, '0')}`;
       }
       return str;
+    }
+
+    // --- POPULASI OPSI BULAN LAMPAU HINGGA BULAN INI ---
+    function populateMonthDropdown() {
+      const select = document.getElementById('month-select');
+      const currentSelected = select.value;
+      select.innerHTML = '';
+
+      const now = new Date();
+      // Tampilkan 12 bulan terakhir (bulan ini mundur sampai 11 bulan ke belakang)
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const val = `${y}-${m}`;
+        const label = `${namaBulanIndo[d.getMonth()]} ${y}` + (i === 0 ? ' (Bulan Ini)' : '');
+
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = label;
+        select.appendChild(opt);
+      }
+
+      if (currentSelected) {
+        select.value = currentSelected;
+      }
+    }
+
+    // Hitung jumlah hari kalender untuk bulan tertentu (YYYY-MM)
+    function getDaysInSpecificMonth(yearMonthStr) {
+      const parts = yearMonthStr.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      return new Date(y, m, 0).getDate(); // Mengambil tanggal terakhir bulan tersebut
     }
 
     // --- SINKRONISASI MASTER GOOGLE SHEETS ---
@@ -629,34 +674,22 @@
       });
     }
 
-    // --- REKAP EVALUASI & KALENDER DINAMIS ---
-    function getDaysInCurrentMonth() {
-      const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    }
-
-    const namaBulanIndo = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
-
+    // --- LOGIKA GANTI PERIODE REKAP (HARI INI / 7 HARI / BULANAN BEBAS PILIH) ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
       const btnToday = document.getElementById('btn-p-today');
       const btnWeek = document.getElementById('btn-p-week');
       const btnMonth = document.getElementById('btn-p-month');
+      const monthContainer = document.getElementById('month-picker-container');
 
       [btnToday, btnWeek, btnMonth].forEach(b => {
         b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
       });
 
-      const now = new Date();
-      const daysInMonth = getDaysInCurrentMonth();
-      const namaBulan = namaBulanIndo[now.getMonth()];
-
       if (period === 'today') {
         btnToday.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
+        monthContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Hadir';
@@ -664,6 +697,7 @@
         document.getElementById('label-stat-3').textContent = 'Total Jamaah';
       } else if (period === 'week') {
         btnWeek.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
+        monthContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
         document.getElementById('periodic-header-title').textContent = 'Evaluasi 7 Hari (Target 35 Waktu)';
@@ -672,9 +706,9 @@
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
       } else if (period === 'month') {
         btnMonth.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
+        monthContainer.classList.remove('hidden');
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
-        document.getElementById('periodic-header-title').textContent = `Evaluasi Bulan ${namaBulan} (${daysInMonth} Hari - Target ${daysInMonth * 5} Waktu)`;
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -682,6 +716,11 @@
 
       renderRekapView();
     };
+
+    // Saat dropdown bulan dipilih, perbarui tampilan
+    document.getElementById('month-select').addEventListener('change', () => {
+      renderRekapView();
+    });
 
     const btnFilterAbsent = document.getElementById('filter-btn-absent');
     const btnFilterPresent = document.getElementById('filter-btn-present');
@@ -700,6 +739,7 @@
       renderRekapView();
     });
 
+    // --- TAMPILKAN REKAP & KALKULASI DINAMIS ---
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
@@ -707,7 +747,7 @@
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // MODE HARI INI
+      // MODE 1: HARI INI
       if (currentPeriod === 'today') {
         const rawPresentLogs = logsData.filter(l => 
           parseDateNormalized(l.date) === todayStr && 
@@ -763,7 +803,7 @@
           });
         }
 
-      // MODE MINGGUAN (7 HARI) ATAU BULAN KALENDER
+      // MODE 2: MINGGUAN (7 HARI) ATAU BULANAN (BEBAS PILIH BULAN)
       } else {
         let targetPerSantri = 0;
         let validLogs = [];
@@ -776,11 +816,17 @@
           validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
 
         } else if (currentPeriod === 'month') {
-          const daysInMonth = getDaysInCurrentMonth(); // Otomatis 28, 29, 30, atau 31
+          const selectedMonthVal = document.getElementById('month-select').value; // contoh: "2026-10"
+          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal); // Otomatis 28, 29, 30, atau 31 hari
           targetPerSantri = daysInMonth * 5;
 
-          const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(currentYearMonth));
+          const parts = selectedMonthVal.split('-');
+          const monthIdx = parseInt(parts[1], 10) - 1;
+          const year = parts[0];
+          document.getElementById('periodic-header-title').textContent = `Evaluasi ${namaBulanIndo[monthIdx]} ${year} (${daysInMonth} Hari - ${targetPerSantri} Sesi)`;
+
+          // Filter log hanya pada bulan terpilih
+          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
         }
 
         const ranking = jamaahData.map(santri => {
@@ -848,15 +894,22 @@
         });
       } else {
         const isMonth = currentPeriod === 'month';
-        const days = isMonth ? getDaysInCurrentMonth() : 7;
-        const targetPerSantri = days * 5;
-        const judul = isMonth ? `Bulan ${namaBulanIndo[now.getMonth()]} (${days} Hari)` : '7 Hari Terakhir';
-
+        let targetPerSantri = 0;
+        let judul = '';
         let validLogs = [];
+
         if (isMonth) {
-          const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(currentYearMonth));
+          const selectedMonthVal = document.getElementById('month-select').value;
+          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal);
+          targetPerSantri = daysInMonth * 5;
+
+          const parts = selectedMonthVal.split('-');
+          const monthIdx = parseInt(parts[1], 10) - 1;
+          judul = `Bulan ${namaBulanIndo[monthIdx]} ${parts[0]} (${daysInMonth} Hari)`;
+          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
         } else {
+          targetPerSantri = 7 * 5;
+          judul = '7 Hari Terakhir';
           const cutoff = new Date();
           cutoff.setDate(cutoff.getDate() - 6);
           const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
@@ -891,6 +944,7 @@
       }).catch(() => alert('Gagal menyalin.'));
     });
 
+    populateMonthDropdown();
     renderJamaahList();
     renderRekapView();
   </script>
