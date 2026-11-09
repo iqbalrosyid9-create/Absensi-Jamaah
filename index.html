@@ -159,7 +159,7 @@
           7 Hari (Mingguan)
         </button>
         <button id="btn-p-month" onclick="switchPeriod('month')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
-          30 Hari (Bulanan)
+          Bulan Ini
         </button>
       </div>
 
@@ -629,7 +629,17 @@
       });
     }
 
-    // --- FUNGSI GANTI PERIODE REKAP (HARI INI / 7 HARI / 30 HARI) ---
+    // --- REKAP EVALUASI & KALENDER DINAMIS ---
+    function getDaysInCurrentMonth() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    }
+
+    const namaBulanIndo = [
+      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ];
+
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
@@ -640,6 +650,10 @@
       [btnToday, btnWeek, btnMonth].forEach(b => {
         b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
       });
+
+      const now = new Date();
+      const daysInMonth = getDaysInCurrentMonth();
+      const namaBulan = namaBulanIndo[now.getMonth()];
 
       if (period === 'today') {
         btnToday.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
@@ -660,7 +674,7 @@
         btnMonth.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
-        document.getElementById('periodic-header-title').textContent = 'Evaluasi 30 Hari (Target 150 Waktu)';
+        document.getElementById('periodic-header-title').textContent = `Evaluasi Bulan ${namaBulan} (${daysInMonth} Hari - Target ${daysInMonth * 5} Waktu)`;
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -669,7 +683,6 @@
       renderRekapView();
     };
 
-    // Filter Hadir vs Belum Hadir (Mode Hari Ini)
     const btnFilterAbsent = document.getElementById('filter-btn-absent');
     const btnFilterPresent = document.getElementById('filter-btn-present');
 
@@ -687,7 +700,6 @@
       renderRekapView();
     });
 
-    // --- KALKULASI & TAMPILAN REKAP ---
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
@@ -695,7 +707,7 @@
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-      // MODE 1: HARI INI
+      // MODE HARI INI
       if (currentPeriod === 'today') {
         const rawPresentLogs = logsData.filter(l => 
           parseDateNormalized(l.date) === todayStr && 
@@ -751,23 +763,30 @@
           });
         }
 
-      // MODE 2: MINGGUAN (7 HARI) ATAU BULANAN (30 HARI)
+      // MODE MINGGUAN (7 HARI) ATAU BULAN KALENDER
       } else {
-        const days = currentPeriod === 'week' ? 7 : 30;
-        const targetPerSantri = days * 5;
+        let targetPerSantri = 0;
+        let validLogs = [];
 
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - (days - 1));
-        const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+        if (currentPeriod === 'week') {
+          targetPerSantri = 7 * 5;
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 6);
+          const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+          validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
 
-        // Ambil log kehadiran yang tanggalnya >= cutoffStr
-        const validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
+        } else if (currentPeriod === 'month') {
+          const daysInMonth = getDaysInCurrentMonth(); // Otomatis 28, 29, 30, atau 31
+          targetPerSantri = daysInMonth * 5;
+
+          const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(currentYearMonth));
+        }
 
         const ranking = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           
-          // Hitung sesi unik per hari + sholat
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const hadirCount = uniqueSessions.size;
           const alfaCount = Math.max(0, targetPerSantri - hadirCount);
@@ -782,7 +801,6 @@
           };
         });
 
-        // Urutkan dari yang alfa paling banyak
         ranking.sort((a, b) => b.alfa - a.alfa);
 
         const totalHadirAll = ranking.reduce((acc, cur) => acc + cur.hadir, 0);
@@ -793,7 +811,7 @@
         document.getElementById('total-registered-count').textContent = `${targetPerSantri} Sesi`;
 
         ranking.forEach((r, idx) => {
-          const isHighAlfa = r.alfa > (targetPerSantri * 0.2); // Alfa > 20%
+          const isHighAlfa = r.alfa > (targetPerSantri * 0.2);
           container.innerHTML += `
             <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border ${isHighAlfa ? 'border-rose-900/60' : 'border-slate-700/60'} text-xs">
               <div>
@@ -829,13 +847,22 @@
           text += `${i + 1}. ${j.name} (${j.id})\n`;
         });
       } else {
-        const days = currentPeriod === 'week' ? 7 : 30;
+        const isMonth = currentPeriod === 'month';
+        const days = isMonth ? getDaysInCurrentMonth() : 7;
         const targetPerSantri = days * 5;
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - (days - 1));
-        const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+        const judul = isMonth ? `Bulan ${namaBulanIndo[now.getMonth()]} (${days} Hari)` : '7 Hari Terakhir';
 
-        const validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
+        let validLogs = [];
+        if (isMonth) {
+          const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(currentYearMonth));
+        } else {
+          const cutoff = new Date();
+          cutoff.setDate(cutoff.getDate() - 6);
+          const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+          validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
+        }
+
         const ranking = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
@@ -853,7 +880,7 @@
         const listAlfa = ranking.filter(r => r.alfa > 0);
         if (listAlfa.length === 0) return alert('Semua santri disiplin, tidak ada yang alfa.');
 
-        text = `*REKAP KEDISIPLINAN SHOLAT SANTRI*\n📊 Periode: ${days} Hari Terakhir\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
+        text = `*REKAP KEDISIPLINAN SHOLAT SANTRI*\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
         listAlfa.forEach((r, i) => {
           text += `${i + 1}. ${r.name} (${r.id}) ➔ *${r.alfa}x Alfa* (Hadir: ${r.hadir}/${r.target})\n`;
         });
