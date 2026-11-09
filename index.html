@@ -56,8 +56,10 @@
     
     <!-- Tab 1: Scanner View -->
     <section id="tab-scan" class="space-y-4">
-      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg">
-        <div class="flex items-center justify-between mb-3">
+      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg space-y-3">
+        
+        <!-- Pilihan Sesi Sholat & Mode Presensi (Tepat Waktu / Masbuq) -->
+        <div class="flex items-center justify-between">
           <label class="text-xs font-semibold text-slate-400">PILIH SESI SHOLAT</label>
           <select id="prayer-select" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500">
             <option value="Subuh">Subuh</option>
@@ -68,6 +70,16 @@
           </select>
         </div>
 
+        <!-- Tombol Status Kehadiran: Tepat Waktu vs Masbuq -->
+        <div class="bg-slate-900/80 p-1 rounded-xl border border-slate-700 flex text-xs">
+          <button id="btn-status-on-time" onclick="setAttendanceStatus('Tepat Waktu')" class="flex-1 py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow flex items-center justify-center gap-1">
+            <span>✅</span> Tepat Waktu
+          </button>
+          <button id="btn-status-masbuq" onclick="setAttendanceStatus('Masbuq')" class="flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-1">
+            <span>⚠️</span> Masbuq
+          </button>
+        </div>
+
         <div class="relative bg-slate-950 rounded-xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
           <div id="reader" class="w-full"></div>
           <div id="camera-placeholder" class="text-center p-6 space-y-2">
@@ -76,7 +88,7 @@
           </div>
         </div>
 
-        <div class="mt-3 grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <button id="btn-start-camera" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl text-xs font-semibold tracking-wide transition shadow">
             Mulai Kamera
           </button>
@@ -237,6 +249,7 @@
     
     let currentPeriod = 'today'; // 'today', 'week', 'month'
     let currentRekapFilter = 'absent';
+    let currentCheckInStatus = 'Tepat Waktu'; // 'Tepat Waktu' atau 'Masbuq'
     let lastScanCooldown = {};
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
@@ -270,14 +283,28 @@
       return str;
     }
 
-    // --- POPULASI OPSI BULAN LAMPAU HINGGA BULAN INI ---
+    // --- PENGATURAN STATUS MASBUQ VS TEPAT WAKTU ---
+    window.setAttendanceStatus = function(status) {
+      currentCheckInStatus = status;
+      const btnOnTime = document.getElementById('btn-status-on-time');
+      const btnMasbuq = document.getElementById('btn-status-masbuq');
+
+      if (status === 'Tepat Waktu') {
+        btnOnTime.className = 'flex-1 py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow flex items-center justify-center gap-1';
+        btnMasbuq.className = 'flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition flex items-center justify-center gap-1';
+      } else {
+        btnMasbuq.className = 'flex-1 py-1.5 rounded-lg font-bold bg-amber-600 text-white transition shadow flex items-center justify-center gap-1';
+        btnOnTime.className = 'flex-1 py-1.5 rounded-lg font-semibold text-slate-400 hover:text-emerald-400 transition flex items-center justify-center gap-1';
+      }
+    };
+
+    // --- POPULASI OPSI BULAN LAMPAU ---
     function populateMonthDropdown() {
       const select = document.getElementById('month-select');
       const currentSelected = select.value;
       select.innerHTML = '';
 
       const now = new Date();
-      // Tampilkan 12 bulan terakhir (bulan ini mundur sampai 11 bulan ke belakang)
       for (let i = 0; i < 12; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const y = d.getFullYear();
@@ -296,12 +323,11 @@
       }
     }
 
-    // Hitung jumlah hari kalender untuk bulan tertentu (YYYY-MM)
     function getDaysInSpecificMonth(yearMonthStr) {
       const parts = yearMonthStr.split('-');
       const y = parseInt(parts[0], 10);
       const m = parseInt(parts[1], 10);
-      return new Date(y, m, 0).getDate(); // Mengambil tanggal terakhir bulan tersebut
+      return new Date(y, m, 0).getDate();
     }
 
     // --- SINKRONISASI MASTER GOOGLE SHEETS ---
@@ -339,23 +365,30 @@
     });
 
     // Audio & Haptic
-    function playBeep(success = true) {
+    function playBeep(type = 'success') {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
         gain.connect(audioCtx.destination);
-        osc.frequency.setValueAtTime(success ? 880 : 320, audioCtx.currentTime);
+        
+        let freq = 880;
+        if (type === 'masbuq') freq = 550;
+        else if (type === 'error') freq = 320;
+
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
         osc.start();
-        osc.stop(audioCtx.currentTime + (success ? 0.12 : 0.25));
+        osc.stop(audioCtx.currentTime + (type === 'error' ? 0.25 : 0.15));
       } catch (e) {}
     }
 
     function triggerHaptic(type = 'success') {
       if ('vibrate' in navigator) {
-        navigator.vibrate(type === 'success' ? [80, 50, 80] : 250);
+        if (type === 'success') navigator.vibrate([80, 50, 80]);
+        else if (type === 'masbuq') navigator.vibrate([120, 80, 120]);
+        else navigator.vibrate(250);
       }
     }
 
@@ -387,7 +420,7 @@
       if (currentPeriod === 'today') renderRekapView();
     });
 
-    // --- PROSES ABSENSI ---
+    // --- PROSES ABSENSI DENGAN STATUS TEPAT WAKTU / MASBUQ ---
     function processAttendance(jamaahId) {
       const cleanId = String(jamaahId || '').trim();
       if (!cleanId) return;
@@ -404,8 +437,8 @@
 
       const person = jamaahData.find(j => String(j.id).trim().toLowerCase() === cleanId.toLowerCase());
       if (!person) {
-        showFeedback(false, 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database.`);
-        playBeep(false);
+        showFeedback('error', 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database.`);
+        playBeep('error');
         triggerHaptic('error');
         return;
       }
@@ -417,8 +450,8 @@
       );
 
       if (alreadyCheckedIn) {
-        showFeedback(false, 'Sudah Absen', `${person.name} sudah absen sholat ${prayer}.`);
-        playBeep(false);
+        showFeedback('error', 'Sudah Absen', `${person.name} sudah absen sholat ${prayer}.`);
+        playBeep('error');
         triggerHaptic('error');
         return;
       }
@@ -431,7 +464,7 @@
         prayer: prayer,
         date: todayStr,
         time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: 'Tepat Waktu'
+        status: currentCheckInStatus // 'Tepat Waktu' atau 'Masbuq'
       };
 
       logsData.unshift(newRecord);
@@ -449,25 +482,31 @@
         }).catch(err => console.error('Gagal kirim:', err));
       }
       
-      showFeedback(true, 'Presensi Masuk', `${person.name} (${prayer})`);
-      playBeep(true);
-      triggerHaptic('success');
+      const isMasbuq = currentCheckInStatus === 'Masbuq';
+      showFeedback(isMasbuq ? 'masbuq' : 'success', isMasbuq ? 'Masbuq Tercatat' : 'Presensi Berhasil', `${person.name} (${prayer})`);
+      playBeep(isMasbuq ? 'masbuq' : 'success');
+      triggerHaptic(isMasbuq ? 'masbuq' : 'success');
     }
 
-    function showFeedback(success, title, msg) {
+    function showFeedback(type, title, msg) {
       const box = document.getElementById('scan-feedback');
       const icon = document.getElementById('feedback-icon');
       const titleEl = document.getElementById('feedback-title');
       const msgEl = document.getElementById('feedback-msg');
 
-      box.classList.remove('hidden', 'border-emerald-500', 'border-rose-500', 'bg-emerald-950/40', 'bg-rose-950/40');
-      if (success) {
+      box.classList.remove('hidden', 'border-emerald-500', 'border-amber-500', 'border-rose-500', 'bg-emerald-950/40', 'bg-amber-950/40', 'bg-rose-950/40');
+      
+      if (type === 'success') {
         box.classList.add('border-emerald-500', 'bg-emerald-950/40');
         icon.textContent = '✅';
         titleEl.className = 'text-xs font-bold text-emerald-400';
+      } else if (type === 'masbuq') {
+        box.classList.add('border-amber-500', 'bg-amber-950/40');
+        icon.textContent = '⚠️';
+        titleEl.className = 'text-xs font-bold text-amber-400';
       } else {
         box.classList.add('border-rose-500', 'bg-rose-950/40');
-        icon.textContent = '⚠️';
+        icon.textContent = '❌';
         titleEl.className = 'text-xs font-bold text-rose-400';
       }
 
@@ -674,7 +713,7 @@
       });
     }
 
-    // --- LOGIKA GANTI PERIODE REKAP (HARI INI / 7 HARI / BULANAN BEBAS PILIH) ---
+    // --- REKAP EVALUASI ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
@@ -717,7 +756,6 @@
       renderRekapView();
     };
 
-    // Saat dropdown bulan dipilih, perbarui tampilan
     document.getElementById('month-select').addEventListener('change', () => {
       renderRekapView();
     });
@@ -739,7 +777,6 @@
       renderRekapView();
     });
 
-    // --- TAMPILKAN REKAP & KALKULASI DINAMIS ---
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
@@ -791,19 +828,22 @@
             return;
           }
           presentLogs.forEach((log, idx) => {
+            const isMasbuq = log.status === 'Masbuq';
             container.innerHTML += `
               <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
                 <div>
                   <p class="font-bold text-slate-200">${idx + 1}. ${log.name}</p>
                   <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.time}</p>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700">${log.status}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-semibold ${isMasbuq ? 'bg-amber-950 text-amber-300 border border-amber-700' : 'bg-emerald-950 text-emerald-300 border border-emerald-700'}">
+                  ${log.status}
+                </span>
               </div>
             `;
           });
         }
 
-      // MODE 2: MINGGUAN (7 HARI) ATAU BULANAN (BEBAS PILIH BULAN)
+      // MODE 2: MINGGUAN (7 HARI) ATAU BULANAN
       } else {
         let targetPerSantri = 0;
         let validLogs = [];
@@ -816,8 +856,8 @@
           validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
 
         } else if (currentPeriod === 'month') {
-          const selectedMonthVal = document.getElementById('month-select').value; // contoh: "2026-10"
-          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal); // Otomatis 28, 29, 30, atau 31 hari
+          const selectedMonthVal = document.getElementById('month-select').value;
+          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal);
           targetPerSantri = daysInMonth * 5;
 
           const parts = selectedMonthVal.split('-');
@@ -825,7 +865,6 @@
           const year = parts[0];
           document.getElementById('periodic-header-title').textContent = `Evaluasi ${namaBulanIndo[monthIdx]} ${year} (${daysInMonth} Hari - ${targetPerSantri} Sesi)`;
 
-          // Filter log hanya pada bulan terpilih
           validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
         }
 
@@ -835,6 +874,7 @@
           
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const hadirCount = uniqueSessions.size;
+          const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
           const alfaCount = Math.max(0, targetPerSantri - hadirCount);
 
           return {
@@ -842,12 +882,14 @@
             name: santri.name,
             category: santri.category,
             hadir: hadirCount,
+            masbuq: masbuqCount,
             alfa: alfaCount,
             target: targetPerSantri
           };
         });
 
-        ranking.sort((a, b) => b.alfa - a.alfa);
+        // Urutkan dari alfa terbanyak, lalu masbuq terbanyak
+        ranking.sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
         const totalHadirAll = ranking.reduce((acc, cur) => acc + cur.hadir, 0);
         const totalAlfaAll = ranking.reduce((acc, cur) => acc + cur.alfa, 0);
@@ -862,7 +904,7 @@
             <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border ${isHighAlfa ? 'border-rose-900/60' : 'border-slate-700/60'} text-xs">
               <div>
                 <p class="font-bold ${isHighAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${r.name}</p>
-                <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target} waktu</p>
+                <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target} ${r.masbuq > 0 ? `• <span class="text-amber-400 font-bold">${r.masbuq}x Masbuq</span>` : ''}</p>
               </div>
               <div class="text-right">
                 <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${r.alfa > 0 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
@@ -921,26 +963,28 @@
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const hadirCount = uniqueSessions.size;
+          const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
           return {
             name: santri.name,
             id: santri.id,
             hadir: hadirCount,
+            masbuq: masbuqCount,
             alfa: Math.max(0, targetPerSantri - hadirCount),
             target: targetPerSantri
           };
-        }).sort((a, b) => b.alfa - a.alfa);
+        }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
-        const listAlfa = ranking.filter(r => r.alfa > 0);
-        if (listAlfa.length === 0) return alert('Semua santri disiplin, tidak ada yang alfa.');
+        const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0);
+        if (listCatatan.length === 0) return alert('Semua santri disiplin, tidak ada yang alfa maupun masbuq.');
 
-        text = `*REKAP KEDISIPLINAN SHOLAT SANTRI*\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
-        listAlfa.forEach((r, i) => {
-          text += `${i + 1}. ${r.name} (${r.id}) ➔ *${r.alfa}x Alfa* (Hadir: ${r.hadir}/${r.target})\n`;
+        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
+        listCatatan.forEach((r, i) => {
+          text += `${i + 1}. ${r.name} (${r.id}) ➔ *${r.alfa}x Alfa*, ${r.masbuq}x Masbuq (Hadir: ${r.hadir}/${r.target})\n`;
         });
       }
 
       navigator.clipboard.writeText(text).then(() => {
-        showFeedback(true, 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
+        showFeedback('success', 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
       }).catch(() => alert('Gagal menyalin.'));
     });
 
