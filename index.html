@@ -207,7 +207,7 @@
         </div>
       </div>
 
-      <!-- Fitur Pencarian di Menu Rekap -->
+      <!-- Fitur Pencarian & Tombol Alfa Massal -->
       <div class="bg-slate-800 rounded-2xl p-2.5 border border-slate-700 flex gap-2">
         <input type="text" id="rekap-search-input" placeholder="🔍 Cari nama atau ID santri..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
         <button id="btn-save-alfa-sheet" onclick="saveAlfaToSpreadsheet()" title="Simpan santri belum hadir menjadi baris Alfa di Spreadsheet" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] transition shrink-0 flex items-center gap-1">
@@ -242,14 +242,14 @@
 
   </main>
 
-  <!-- Modal Edit Status Laporan (Koreksi Masbuq / Tepat / Sakit / Pulang) -->
+  <!-- Modal Edit Status Laporan (Koreksi Status) -->
   <div id="modal-edit-status" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
       <div class="border-b border-slate-700/60 pb-2">
         <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
           <span>✏️</span> Koreksi Status Santri
         </h3>
-        <p id="edit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5">Nama Santri - Subuh (2026-11-09)</p>
+        <p id="edit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5">Nama Santri</p>
       </div>
 
       <div class="space-y-2">
@@ -301,7 +301,7 @@
     let currentRekapFilter = 'absent';
     let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
-    let activeEditingRecord = null; // Menyimpan data santri yang sedang diedit
+    let activeEditingRecord = null;
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
@@ -533,7 +533,7 @@
         fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(newRecord)
         }).then(() => {
           setTimeout(syncFromCloud, 1000);
@@ -854,7 +854,7 @@
       renderRekapView();
     });
 
-    // --- FUNGSI EDIT / KOREKSI STATUS LAPORAN ---
+    // --- FUNGSI EDIT / KOREKSI STATUS LAPORAN (PERMANEN KE SPREADSHEET) ---
     window.openEditModal = function(jamaahId, name, prayer, date, currentStatus) {
       activeEditingRecord = { jamaahId, name, prayer, date };
       document.getElementById('edit-modal-subtitle').textContent = `${name} (${jamaahId}) • Sholat ${prayer} • ${date}`;
@@ -875,19 +875,18 @@
       // 1. Update di memori lokal langsung
       let found = false;
       logsData.forEach(l => {
-        if (String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase() &&
-            l.prayer === prayer && parseDateNormalized(l.date) === date) {
+        const idMatch = String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase();
+        if (idMatch && l.prayer === prayer && parseDateNormalized(l.date) === date) {
           l.status = newStatus;
           found = true;
         }
       });
 
-      // Jika awalnya belum ada log (misal anak alfa mau diubah jadi masbuq)
       if (!found) {
         const now = new Date();
         logsData.unshift({
           id: 'LOG-' + Date.now(),
-          jamaahId: jamaahId,
+          jamaahId: String(jamaahId).trim(),
           name: name,
           category: 'Santri',
           prayer: prayer,
@@ -900,24 +899,33 @@
       saveState();
       renderRekapView();
       closeEditModal();
-      showFeedback('success', 'Status Diperbarui', `${name} diubah menjadi ${newStatus}`);
+      showFeedback('success', 'Menyimpan Koreksi...', `${name} diubah ke ${newStatus}`);
 
-      // 2. Sinkronkan pembaruan ke Google Spreadsheet
+      // 2. Kirim update ke Google Spreadsheet
       if (SCRIPT_URL) {
+        const payload = JSON.stringify({
+          action: 'update_status',
+          jamaahId: String(jamaahId).trim(),
+          prayer: prayer,
+          date: date,
+          name: name,
+          newStatus: newStatus
+        });
+
         fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update_status',
-            jamaahId: jamaahId,
-            prayer: prayer,
-            date: date,
-            newStatus: newStatus
-          })
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: payload
         }).then(() => {
-          setTimeout(syncFromCloud, 1200);
-        }).catch(err => console.error('Gagal update ke server:', err));
+          setTimeout(() => {
+            syncFromCloud();
+            showFeedback('success', 'Tersimpan Permanen', `Status ${name} berhasil disimpan di Spreadsheet.`);
+          }, 2500);
+        }).catch(err => {
+          console.error('Gagal koreksi status:', err);
+          showFeedback('error', 'Gagal Terhubung', 'Periksa koneksi internet ke Google Sheets.');
+        });
       }
     };
 
@@ -947,7 +955,6 @@
         time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
       }));
 
-      // Tambahkan ke lokal
       recordsToSend.forEach(r => {
         logsData.unshift({
           id: 'LOG-' + Date.now(),
@@ -964,19 +971,18 @@
       saveState();
       renderRekapView();
 
-      // Kirim serentak ke Google Sheets
       if (SCRIPT_URL) {
         fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({
             action: 'bulk_alfa',
             records: recordsToSend
           })
         }).then(() => {
           showFeedback('error', 'Alfa Tersimpan', `${recordsToSend.length} santri berhasil dicatat Alfa ke Spreadsheet.`);
-          setTimeout(syncFromCloud, 1500);
+          setTimeout(syncFromCloud, 2000);
         }).catch(() => alert('Gagal mengirim data alfa ke spreadsheet.'));
       }
     };
@@ -1131,7 +1137,6 @@
           };
         });
 
-        // Filter pencarian pada mode periode
         if (searchKeyword) {
           ranking = ranking.filter(r => 
             r.name.toLowerCase().includes(searchKeyword) || String(r.id).toLowerCase().includes(searchKeyword)
