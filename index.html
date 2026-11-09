@@ -57,8 +57,6 @@
     
     <!-- Tab 1: Scanner View -->
     <section id="tab-scan" class="space-y-4">
-      
-      <!-- Banner Identitas Pesantren di Menu Scan -->
       <div class="bg-gradient-to-r from-emerald-900 to-slate-800 p-3.5 rounded-2xl border border-emerald-700/60 shadow-lg text-center space-y-0.5">
         <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Sistem Presensi Sholat</span>
         <h2 class="text-sm font-black text-amber-300 leading-snug">
@@ -68,8 +66,6 @@
       </div>
 
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg space-y-3">
-        
-        <!-- Pilihan Sesi Sholat -->
         <div class="flex items-center justify-between">
           <label class="text-xs font-semibold text-slate-400">PILIH SESI SHOLAT</label>
           <select id="prayer-select" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500">
@@ -81,7 +77,6 @@
           </select>
         </div>
 
-        <!-- 4 Tombol Pilihan Status Presensi -->
         <div>
           <label class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Status Kehadiran Santri:</label>
           <div class="grid grid-cols-4 gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-[11px]">
@@ -118,7 +113,6 @@
         </div>
       </div>
 
-      <!-- Quick Manual Check-In -->
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700">
         <h2 class="text-xs font-semibold text-slate-400 mb-2">ABSENSI MANUAL / ID</h2>
         <div class="flex space-x-2">
@@ -129,7 +123,6 @@
         </div>
       </div>
 
-      <!-- Live Scan Result Toast -->
       <div id="scan-feedback" class="hidden bg-slate-800 border-l-4 rounded-xl p-3 shadow-lg flex items-center space-x-3">
         <div id="feedback-icon" class="text-2xl">✅</div>
         <div class="flex-1">
@@ -139,13 +132,13 @@
       </div>
     </section>
 
-    <!-- Tab 2: Jamaah (Tersinkron Database) -->
+    <!-- Tab 2: Jamaah -->
     <section id="tab-jamaah" class="hidden space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-sm font-bold text-slate-200">Database Jamaah</h2>
-            <p class="text-[11px] text-slate-400">Tersinkron dari Google Sheets (Database Jamaah)</p>
+            <p class="text-[11px] text-slate-400">Tersinkron dari Google Sheets</p>
           </div>
           <div class="flex items-center gap-2">
             <a href="./cetak.html" target="_blank" class="px-2.5 py-1 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow flex items-center gap-1 transition">
@@ -156,7 +149,6 @@
         </div>
       </div>
 
-      <!-- Preview Modal Card QR (Cetak Satuan) -->
       <div id="qr-preview-box" class="hidden bg-slate-800 rounded-2xl p-4 border border-emerald-500 text-center space-y-3 shadow-xl">
         <h3 id="card-preview-name" class="font-bold text-sm text-emerald-400">Kartu Digital</h3>
         <p id="card-preview-role" class="text-xs text-slate-400">Kategori</p>
@@ -173,13 +165,12 @@
         </div>
       </div>
 
-      <!-- List Jamaah -->
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div id="jamaah-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </section>
 
-    <!-- Tab 3: Rekap & Cek Disiplin Santri -->
+    <!-- Tab 3: Rekap, Edit Status & Simpan Alfa -->
     <section id="tab-rekap" class="hidden space-y-4">
       
       <!-- Pemilih Mode Periode -->
@@ -195,7 +186,6 @@
         </button>
       </div>
 
-      <!-- Selector Bulan Khusus -->
       <div id="month-picker-container" class="hidden bg-slate-800 p-2.5 rounded-2xl border border-slate-700 flex items-center justify-between gap-2">
         <label for="month-select" class="text-xs font-semibold text-slate-400 shrink-0">Pilih Bulan:</label>
         <select id="month-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 flex-1"></select>
@@ -217,7 +207,15 @@
         </div>
       </div>
 
-      <!-- Bagian List Evaluasi & Filter -->
+      <!-- Fitur Pencarian di Menu Rekap -->
+      <div class="bg-slate-800 rounded-2xl p-2.5 border border-slate-700 flex gap-2">
+        <input type="text" id="rekap-search-input" placeholder="🔍 Cari nama atau ID santri..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
+        <button id="btn-save-alfa-sheet" onclick="saveAlfaToSpreadsheet()" title="Simpan santri belum hadir menjadi baris Alfa di Spreadsheet" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] transition shrink-0 flex items-center gap-1">
+          📥 Catat Alfa ke Sheet
+        </button>
+      </div>
+
+      <!-- Bagian List Rekap & Filter -->
       <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-700/60">
           <div id="daily-filter-tabs" class="flex space-x-1">
@@ -243,6 +241,38 @@
     </section>
 
   </main>
+
+  <!-- Modal Edit Status Laporan (Koreksi Masbuq / Tepat / Sakit / Pulang) -->
+  <div id="modal-edit-status" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
+      <div class="border-b border-slate-700/60 pb-2">
+        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+          <span>✏️</span> Koreksi Status Santri
+        </h3>
+        <p id="edit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5">Nama Santri - Subuh (2026-11-09)</p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-300">Pilih Status Baru:</label>
+        <select id="edit-select-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
+          <option value="Tepat Waktu">✅ Tepat Waktu</option>
+          <option value="Masbuq">⚠️ Masbuq</option>
+          <option value="Izin Pulang">🏠 Izin Pulang</option>
+          <option value="Sakit">💊 Sakit</option>
+          <option value="Alfa">❌ Alfa</option>
+        </select>
+      </div>
+
+      <div class="pt-2 flex justify-end gap-2">
+        <button onclick="closeEditModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-medium">
+          Batal
+        </button>
+        <button onclick="submitStatusCorrection()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow">
+          Simpan Koreksi
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Bottom Navigation -->
   <nav class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 z-40 max-w-md mx-auto">
@@ -271,6 +301,7 @@
     let currentRekapFilter = 'absent';
     let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
+    let activeEditingRecord = null; // Menyimpan data santri yang sedang diedit
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
@@ -769,6 +800,7 @@
         monthContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
+        document.getElementById('btn-save-alfa-sheet').classList.remove('hidden');
         document.getElementById('label-stat-1').textContent = 'Hadir/Izin';
         document.getElementById('label-stat-2').textContent = 'Belum Absen';
         document.getElementById('label-stat-3').textContent = 'Total Jamaah';
@@ -778,6 +810,7 @@
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
         document.getElementById('periodic-header-title').textContent = 'Evaluasi 7 Hari (Target 35 Waktu)';
+        document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -786,6 +819,7 @@
         monthContainer.classList.remove('hidden');
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
+        document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -815,12 +849,145 @@
       renderRekapView();
     });
 
+    // Event Pencarian di Rekap
+    document.getElementById('rekap-search-input').addEventListener('input', () => {
+      renderRekapView();
+    });
+
+    // --- FUNGSI EDIT / KOREKSI STATUS LAPORAN ---
+    window.openEditModal = function(jamaahId, name, prayer, date, currentStatus) {
+      activeEditingRecord = { jamaahId, name, prayer, date };
+      document.getElementById('edit-modal-subtitle').textContent = `${name} (${jamaahId}) • Sholat ${prayer} • ${date}`;
+      document.getElementById('edit-select-status').value = currentStatus;
+      document.getElementById('modal-edit-status').classList.remove('hidden');
+    };
+
+    window.closeEditModal = function() {
+      activeEditingRecord = null;
+      document.getElementById('modal-edit-status').classList.add('hidden');
+    };
+
+    window.submitStatusCorrection = function() {
+      if (!activeEditingRecord) return;
+      const newStatus = document.getElementById('edit-select-status').value;
+      const { jamaahId, prayer, date, name } = activeEditingRecord;
+
+      // 1. Update di memori lokal langsung
+      let found = false;
+      logsData.forEach(l => {
+        if (String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase() &&
+            l.prayer === prayer && parseDateNormalized(l.date) === date) {
+          l.status = newStatus;
+          found = true;
+        }
+      });
+
+      // Jika awalnya belum ada log (misal anak alfa mau diubah jadi masbuq)
+      if (!found) {
+        const now = new Date();
+        logsData.unshift({
+          id: 'LOG-' + Date.now(),
+          jamaahId: jamaahId,
+          name: name,
+          category: 'Santri',
+          prayer: prayer,
+          date: date,
+          time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          status: newStatus
+        });
+      }
+
+      saveState();
+      renderRekapView();
+      closeEditModal();
+      showFeedback('success', 'Status Diperbarui', `${name} diubah menjadi ${newStatus}`);
+
+      // 2. Sinkronkan pembaruan ke Google Spreadsheet
+      if (SCRIPT_URL) {
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_status',
+            jamaahId: jamaahId,
+            prayer: prayer,
+            date: date,
+            newStatus: newStatus
+          })
+        }).then(() => {
+          setTimeout(syncFromCloud, 1200);
+        }).catch(err => console.error('Gagal update ke server:', err));
+      }
+    };
+
+    // --- FUNGSI SIMPAN ALFA HARI INI KE SPREADSHEET SECARA MASSAL ---
+    window.saveAlfaToSpreadsheet = function() {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const prayer = document.getElementById('prayer-select').value;
+
+      const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr && l.prayer === prayer);
+      const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
+      const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
+
+      if (absentList.length === 0) {
+        return alert(`Semua santri sudah tercatat pada sholat ${prayer}. Tidak ada data alfa yang perlu disimpan.`);
+      }
+
+      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} ke Google Sheets sebagai 'Alfa'?`;
+      if (!confirm(confirmMsg)) return;
+
+      const recordsToSend = absentList.map(j => ({
+        jamaahId: j.id,
+        name: j.name,
+        category: j.category,
+        prayer: prayer,
+        date: todayStr,
+        time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      }));
+
+      // Tambahkan ke lokal
+      recordsToSend.forEach(r => {
+        logsData.unshift({
+          id: 'LOG-' + Date.now(),
+          jamaahId: r.jamaahId,
+          name: r.name,
+          category: r.category,
+          prayer: r.prayer,
+          date: r.date,
+          time: r.time,
+          status: 'Alfa'
+        });
+      });
+
+      saveState();
+      renderRekapView();
+
+      // Kirim serentak ke Google Sheets
+      if (SCRIPT_URL) {
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'bulk_alfa',
+            records: recordsToSend
+          })
+        }).then(() => {
+          showFeedback('error', 'Alfa Tersimpan', `${recordsToSend.length} santri berhasil dicatat Alfa ke Spreadsheet.`);
+          setTimeout(syncFromCloud, 1500);
+        }).catch(() => alert('Gagal mengirim data alfa ke spreadsheet.'));
+      }
+    };
+
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
       const prayer = document.getElementById('prayer-select').value;
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
 
       // MODE 1: HARI INI
       if (currentPeriod === 'today') {
@@ -845,31 +1012,53 @@
         document.getElementById('total-registered-count').textContent = jamaahData.length;
 
         if (currentRekapFilter === 'absent') {
-          if (absentList.length === 0) {
-            container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Alhamdulillah, semua santri sudah tercatat pada sholat ${prayer}!</p>`;
+          let filteredAbsent = absentList;
+          if (searchKeyword) {
+            filteredAbsent = absentList.filter(j => 
+              j.name.toLowerCase().includes(searchKeyword) || String(j.id).toLowerCase().includes(searchKeyword)
+            );
+          }
+
+          if (filteredAbsent.length === 0) {
+            container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Tidak ada santri yang belum hadir.</p>`;
             return;
           }
-          absentList.forEach((j, idx) => {
+
+          filteredAbsent.forEach((j, idx) => {
             container.innerHTML += `
               <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-rose-900/40 text-xs">
                 <div>
                   <p class="font-bold text-rose-300">${idx + 1}. ${j.name}</p>
                   <p class="text-slate-400 font-mono text-[11px]">${j.id} • ${j.category}</p>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-800">Belum Hadir</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-800">Belum Hadir</span>
+                  <button onclick="openEditModal('${j.id}', '${j.name}', '${prayer}', '${todayStr}', 'Alfa')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
+                    ✏️
+                  </button>
+                </div>
               </div>
             `;
           });
         } else {
-          if (presentLogs.length === 0) {
+          let filteredPresent = presentLogs;
+          if (searchKeyword) {
+            filteredPresent = presentLogs.filter(l => 
+              l.name.toLowerCase().includes(searchKeyword) || String(l.jamaahId).toLowerCase().includes(searchKeyword)
+            );
+          }
+
+          if (filteredPresent.length === 0) {
             container.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">Belum ada catatan pada sholat ${prayer}.</p>`;
             return;
           }
-          presentLogs.forEach((log, idx) => {
+
+          filteredPresent.forEach((log, idx) => {
             let badgeStyle = 'bg-emerald-950 text-emerald-300 border-emerald-700';
             if (log.status === 'Masbuq') badgeStyle = 'bg-amber-950 text-amber-300 border-amber-700';
             else if (log.status === 'Izin Pulang') badgeStyle = 'bg-blue-950 text-blue-300 border-blue-700';
             else if (log.status === 'Sakit') badgeStyle = 'bg-purple-950 text-purple-300 border-purple-700';
+            else if (log.status === 'Alfa') badgeStyle = 'bg-rose-950 text-rose-300 border-rose-700';
 
             container.innerHTML += `
               <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
@@ -877,9 +1066,14 @@
                   <p class="font-bold text-slate-200">${idx + 1}. ${log.name}</p>
                   <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.time}</p>
                 </div>
-                <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}">
-                  ${log.status}
-                </span>
+                <div class="flex items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}">
+                    ${log.status}
+                  </span>
+                  <button onclick="openEditModal('${log.jamaahId}', '${log.name}', '${log.prayer}', '${parseDateNormalized(log.date)}', '${log.status}')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
+                    ✏️
+                  </button>
+                </div>
               </div>
             `;
           });
@@ -910,7 +1104,7 @@
           validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
         }
 
-        const ranking = jamaahData.map(santri => {
+        let ranking = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
           
@@ -936,6 +1130,13 @@
             target: targetPerSantri
           };
         });
+
+        // Filter pencarian pada mode periode
+        if (searchKeyword) {
+          ranking = ranking.filter(r => 
+            r.name.toLowerCase().includes(searchKeyword) || String(r.id).toLowerCase().includes(searchKeyword)
+          );
+        }
 
         ranking.sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
@@ -984,11 +1185,12 @@
         const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
         const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
 
+        const masbuqList = rawPresentLogs.filter(l => l.status === 'Masbuq');
         const sakitList = rawPresentLogs.filter(l => l.status === 'Sakit');
         const pulangList = rawPresentLogs.filter(l => l.status === 'Izin Pulang');
 
-        if (absentList.length === 0 && sakitList.length === 0 && pulangList.length === 0) {
-          return alert('Semua santri hadir tepat waktu/masbuq.');
+        if (absentList.length === 0 && sakitList.length === 0 && pulangList.length === 0 && masbuqList.length === 0) {
+          return alert('Semua santri hadir tepat waktu.');
         }
 
         text = `*LAPORAN PRESENSI SHOLAT*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n✨ Sesi: Sholat ${prayer}\n\n`;
@@ -997,6 +1199,14 @@
           text += `❌ *BELUM HADIR / ALFA (${absentList.length} orang):*\n`;
           absentList.forEach((j, i) => {
             text += `${i + 1}. ${j.name} (${j.id})\n`;
+          });
+          text += `\n`;
+        }
+
+        if (masbuqList.length > 0) {
+          text += `⚠️ *MASBUQ (${masbuqList.length} orang):*\n`;
+          masbuqList.forEach((m, i) => {
+            text += `${i + 1}. ${m.name} (${m.jamaahId})\n`;
           });
           text += `\n`;
         }
