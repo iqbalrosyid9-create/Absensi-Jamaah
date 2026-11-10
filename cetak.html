@@ -3,212 +3,233 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cetak Kartu QR Jamaah</title>
+  <title>Cetak Kartu Santri - PPTQ Al Husna Lestari</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
+  
   <style>
-    .card-print {
-      width: 8.5cm;
-      height: 5.4cm;
-      page-break-inside: avoid;
-    }
-
     @media print {
+      /* Sembunyikan semua kontrol saat print */
+      .no-print {
+        display: none !important;
+      }
       body {
         background: white !important;
         color: black !important;
         padding: 0 !important;
         margin: 0 !important;
       }
-      .no-print {
-        display: none !important;
-      }
-      .page-sheet {
-        box-shadow: none !important;
-        border: none !important;
-        margin: 0 !important;
-        padding: 0.8cm !important;
-        width: 100% !important;
-      }
-      .card-print {
-        border: 1px dashed #94a3b8 !important;
-      }
-      /* Sembunyikan tombol cetak satuan internal saat diprint */
-      .card-action-btn {
-        display: none !important;
-      }
       @page {
         size: A4 portrait;
-        margin: 0.5cm;
+        margin: 1cm;
       }
+      .card-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+    }
+
+    /* Ukuran Standar Kartu ID */
+    .id-card-size {
+      width: 8.5cm;
+      height: 5.4cm;
+      box-sizing: border-box;
     }
   </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4">
 
-  <!-- Header Kontrol & Pencarian (Tidak Ikut Tercetak) -->
-  <header class="no-print max-w-4xl mx-auto mb-6 bg-slate-800 border border-slate-700 p-4 rounded-2xl space-y-3 shadow-lg">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+  <!-- Kontrol Navigasi & Pilihan Santri (Tidak Ikut Ter-print) -->
+  <div class="no-print max-w-4xl mx-auto space-y-4 mb-6">
+    
+    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg flex flex-col md:flex-row items-center justify-between gap-3">
       <div>
         <h1 class="text-base font-bold text-white flex items-center gap-2">
-          <span>🖨️</span> Cetak Kartu Presensi
+          <span>🖨️</span> Cetak Kartu Presensi Santri
         </h1>
-        <p class="text-xs text-slate-400">Bisa cetak massal (semua) atau cari nama anak untuk cetak satuan.</p>
+        <p class="text-xs text-slate-400">Pilih beberapa santri yang kehilangan kartu untuk dicetak sekaligus dalam kertas A4.</p>
       </div>
-      
       <div class="flex items-center gap-2">
-        <a href="./index.html" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition">
-          ⬅️ Kembali ke App
-        </a>
-        <button id="btn-print-all" onclick="printAll()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow transition flex items-center gap-1.5">
-          🖨️ Cetak Semua (A4)
+        <button onclick="window.close()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition">
+          Kembali
+        </button>
+        <button id="btn-print-action" onclick="handlePrint()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 transition">
+          <span>🖨️</span> Cetak Sekarang (<span id="selected-count-badge">0</span>)
         </button>
       </div>
     </div>
 
-    <!-- Kolom Cari Nama / ID -->
-    <div class="pt-2 border-t border-slate-700/60 flex gap-2">
-      <input type="text" id="search-input" placeholder="🔍 Cari nama atau ID santri yang kartunya hilang..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
-      <button id="btn-reset-search" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs text-slate-300 font-medium">
-        Tampilkan Semua
-      </button>
+    <!-- Filter & Pencarian -->
+    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <input type="text" id="search-input" placeholder="🔍 Cari nama atau ID santri..." class="w-full sm:w-80 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end text-xs">
+          <button onclick="toggleSelectAll(true)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-emerald-400 font-semibold rounded-lg">
+            Pilih Semua
+          </button>
+          <button onclick="toggleSelectAll(false)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg">
+            Batal Pilih
+          </button>
+        </div>
+      </div>
+
+      <!-- Daftar Pilihan Santri (Checkbox) -->
+      <div id="selection-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1"></div>
     </div>
-  </header>
 
-  <!-- Area Lembar Cetak -->
-  <main class="page-sheet max-w-4xl mx-auto bg-white rounded-2xl p-6 shadow-2xl text-slate-900 min-h-[600px]">
-    
-    <!-- Status Loading -->
-    <div id="loading-state" class="text-center py-16 text-slate-500 space-y-2">
-      <div class="inline-block animate-spin text-3xl">⏳</div>
-      <p class="text-sm font-medium">Mengambil database jamaah dari Google Sheets...</p>
-    </div>
+  </div>
 
-    <!-- Wadah Grid Kartu -->
-    <div id="cards-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4 justify-items-center"></div>
-
-  </main>
+  <!-- Area Lembar Cetak Kartu (A4 Layout) -->
+  <div id="print-sheet-container" class="max-w-[21cm] mx-auto bg-white text-slate-900 p-4 rounded-2xl shadow-2xl flex flex-wrap gap-3 justify-center items-center">
+    <p id="empty-state-text" class="text-xs text-slate-500 py-12 text-center no-print">
+      Centang satu atau beberapa santri di atas untuk melihat pratinjau kartu yang akan dicetak.
+    </p>
+  </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszfOTv1q99BRO8skYi5ueiN16wmogFbTZEYjop4nIMGOGi_AtXfngea_ojoNjwBTU/exec";
-    let allJamaah = [];
+    // Ambil data santri dari cache localStorage aplikasi presensi
+    let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
+    let selectedIds = new Set();
 
-    window.handleCloudMaster = function(res) {
-      document.getElementById('loading-state').classList.add('hidden');
-      if (res && Array.isArray(res.jamaah)) {
-        allJamaah = res.jamaah;
-        renderCards(allJamaah);
+    // Render daftar santri dengan kotak centang
+    function renderSelectionList() {
+      const listContainer = document.getElementById('selection-list');
+      const keyword = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      listContainer.innerHTML = '';
+
+      let filtered = jamaahData;
+      if (keyword) {
+        filtered = jamaahData.filter(j => 
+          j.name.toLowerCase().includes(keyword) || String(j.id).toLowerCase().includes(keyword)
+        );
       }
-    };
 
-    function renderCards(list) {
-      const container = document.getElementById('cards-container');
-      container.innerHTML = '';
-
-      if (list.length === 0) {
-        container.innerHTML = '<p class="col-span-2 text-center py-8 text-rose-500 text-sm font-semibold">Santri/Jamaah tidak ditemukan.</p>';
+      if (filtered.length === 0) {
+        listContainer.innerHTML = '<p class="text-xs text-slate-400 py-4 col-span-full text-center">Tidak ada santri yang cocok.</p>';
         return;
       }
 
-      list.forEach((person, index) => {
+      filtered.forEach(j => {
+        const isChecked = selectedIds.has(String(j.id));
+        const div = document.createElement('label');
+        div.className = `flex items-center gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition select-none ${isChecked ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'}`;
+        div.innerHTML = `
+          <input type="checkbox" value="${j.id}" ${isChecked ? 'checked' : ''} onchange="toggleSelect('${j.id}')" class="rounded text-emerald-600 focus:ring-emerald-500 bg-slate-800 border-slate-700">
+          <div class="min-w-0 flex-1">
+            <p class="font-bold truncate text-[11px] leading-tight">${j.name}</p>
+            <p class="text-[10px] text-slate-400 font-mono">${j.id} • ${j.category}</p>
+          </div>
+        `;
+        listContainer.appendChild(div);
+      });
+
+      document.getElementById('selected-count-badge').textContent = selectedIds.size;
+    }
+
+    // Toggle centang satuan
+    window.toggleSelect = function(id) {
+      id = String(id);
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+      } else {
+        selectedIds.add(id);
+      }
+      renderSelectionList();
+      renderPrintCards();
+    };
+
+    // Toggle pilih semua
+    window.toggleSelectAll = function(select) {
+      if (select) {
+        jamaahData.forEach(j => selectedIds.add(String(j.id)));
+      } else {
+        selectedIds.clear();
+      }
+      renderSelectionList();
+      renderPrintCards();
+    };
+
+    // Event pencarian
+    document.getElementById('search-input').addEventListener('input', renderSelectionList);
+
+    // Render Kartu yang akan di-print
+    function renderPrintCards() {
+      const container = document.getElementById('print-sheet-container');
+      container.innerHTML = '';
+
+      if (selectedIds.size === 0) {
+        container.innerHTML = `
+          <p id="empty-state-text" class="text-xs text-slate-400 py-12 text-center no-print">
+            Centang satu atau beberapa santri di atas untuk melihat pratinjau kartu yang akan dicetak.
+          </p>
+        `;
+        return;
+      }
+
+      const selectedSantri = jamaahData.filter(j => selectedIds.has(String(j.id)));
+
+      selectedSantri.forEach(santri => {
         const card = document.createElement('div');
-        card.id = `card-node-${person.id}`;
-        card.className = 'card-print bg-white border border-slate-300 rounded-xl p-3 flex flex-col justify-between relative shadow-sm overflow-hidden';
+        card.className = 'id-card-size card-item border-2 border-dashed border-slate-400 rounded-xl p-2.5 flex flex-col justify-between bg-white text-slate-900 shadow-sm relative';
         
-        const qrId = 'qr-item-' + person.id;
-
+        const qrId = 'qrcode-box-' + santri.id;
+        
         card.innerHTML = `
-          <!-- Tombol Cetak Satuan (Hanya Tampil di Layar, Hilang saat Diprint) -->
-          <button onclick="printSingle('${person.id}')" title="Cetak kartu ini saja" class="card-action-btn no-print absolute top-1.5 right-1.5 px-2 py-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold shadow transition">
-            🖨️ Cetak Ini
-          </button>
-
           <!-- Header Kartu -->
-          <div class="flex items-center justify-between border-b border-emerald-800/20 pb-1.5 pr-16">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
             <div class="flex items-center gap-1.5">
-              <span class="text-base">🕌</span>
-              <span class="text-[11px] font-black tracking-tight text-emerald-800 uppercase">KARTU PRESENSI SHOLAT</span>
+              <span class="text-sm">🕌</span>
+              <span class="text-[9px] font-black tracking-wider text-emerald-800 uppercase">KARTU PRESENSI SHOLAT</span>
             </div>
+            <span class="text-[8px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">${santri.category}</span>
           </div>
 
-          <!-- Bagian Isi -->
-          <div class="flex items-center gap-3 my-auto py-1">
-            <div id="${qrId}" class="p-1 bg-white border border-slate-200 rounded-lg shrink-0 flex items-center justify-center"></div>
-            
-            <div class="flex-1 min-w-0">
-              <p class="text-xs font-black text-slate-800 truncate leading-tight">${person.name}</p>
-              <p class="text-[11px] font-mono font-bold text-emerald-700 mt-0.5">${person.id}</p>
-              <p class="text-[8px] text-slate-400 mt-1 leading-tight">Tunjukkan barcode ini kepada petugas scanner saat memasuki mushola.</p>
+          <!-- Body: QR & Biodata -->
+          <div class="flex items-center gap-2.5 my-auto">
+            <div id="${qrId}" class="p-1 bg-white border border-slate-200 rounded-lg shrink-0"></div>
+            <div class="min-w-0 flex-1 space-y-0.5">
+              <h3 class="text-xs font-black leading-tight text-slate-900 truncate">${santri.name}</h3>
+              <p class="text-[11px] font-mono font-bold text-emerald-700 leading-none">ID: ${santri.id}</p>
+              <p class="text-[7.5px] text-slate-500 leading-snug pt-1">Pindai barcode ini pada kamera petugas presensi sebelum sholat.</p>
             </div>
           </div>
 
           <!-- Footer Kartu -->
-          <div class="border-t border-slate-100 pt-1 text-[8px] text-slate-400 flex justify-between items-center">
-            <span>Pondok Pesantren Tahfidzul Qur'an Al Husna</span>
-            <span class="font-mono font-bold text-slate-500">${person.id}</span>
+          <div class="border-t border-slate-200 pt-1 flex items-center justify-between text-[7px] text-slate-400">
+            <span class="font-semibold text-emerald-900">PPTQ Al Husna Lestari</span>
+            <span class="font-mono">${santri.id}</span>
           </div>
         `;
 
         container.appendChild(card);
 
-        // QR Code Generator
-        new QRCode(document.getElementById(qrId), {
-          text: String(person.id),
-          width: 80,
-          height: 80,
-          colorDark: "#065f46",
-          colorLight: "#ffffff"
-        });
+        // Generate QR code dengan ukuran tajam
+        setTimeout(() => {
+          new QRCode(document.getElementById(qrId), {
+            text: String(santri.id),
+            width: 70,
+            height: 70,
+            colorDark: "#047857",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }, 10);
       });
     }
 
-    // --- Cetak Semua Kartu ---
-    function printAll() {
-      renderCards(allJamaah);
-      setTimeout(() => window.print(), 300);
-    }
-
-    // --- Cetak Hanya Satu Kartu Anak yang Hilang ---
-    function printSingle(id) {
-      const single = allJamaah.filter(p => String(p.id).trim() === String(id).trim());
-      renderCards(single);
-      setTimeout(() => {
-        window.print();
-        // Setelah dialog print ditutup, kembalikan ke daftar semua kartu
-        setTimeout(() => renderCards(allJamaah), 1000);
-      }, 300);
-    }
-
-    // --- Filter Pencarian Cepat ---
-    const searchInput = document.getElementById('search-input');
-    searchInput.addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      if (!q) {
-        renderCards(allJamaah);
-        return;
+    // Aksi Cetak
+    window.handlePrint = function() {
+      if (selectedIds.size === 0) {
+        return alert('Silakan centang minimal satu santri yang ingin dicetak kartunya.');
       }
-      const filtered = allJamaah.filter(p => 
-        String(p.name).toLowerCase().includes(q) || 
-        String(p.id).toLowerCase().includes(q)
-      );
-      renderCards(filtered);
-    });
+      window.print();
+    };
 
-    document.getElementById('btn-reset-search').addEventListener('click', () => {
-      searchInput.value = '';
-      renderCards(allJamaah);
-    });
-
-    // Ambil Data Google Sheets via JSONP
-    function loadData() {
-      const script = document.createElement('script');
-      script.src = SCRIPT_URL + '?callback=handleCloudMaster&_t=' + Date.now();
-      document.body.appendChild(script);
-    }
-
-    loadData();
+    // Inisialisasi awal
+    renderSelectionList();
+    renderPrintCards();
   </script>
 </body>
 </html>
