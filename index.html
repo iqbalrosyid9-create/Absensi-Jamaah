@@ -21,8 +21,14 @@
       -webkit-tap-highlight-color: transparent;
     }
     #reader video {
+      margin: 0 auto !important;
+      display: block !important;
       object-fit: cover !important;
       border-radius: 0.75rem;
+    }
+    #reader {
+      width: 100% !important;
+      border: none !important;
     }
   </style>
 </head>
@@ -95,11 +101,12 @@
           </div>
         </div>
 
-        <div class="relative bg-slate-950 rounded-xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
-          <div id="reader" class="w-full"></div>
-          <div id="camera-placeholder" class="text-center p-6 space-y-2">
+        <!-- Wadah Kamera (Terkunci Tengah) -->
+        <div class="relative bg-slate-950 rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
+          <div id="reader" class="w-full flex items-center justify-center"></div>
+          <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center space-y-2 pointer-events-none">
             <div class="text-4xl">📷</div>
-            <p class="text-xs text-slate-400">Kamera dinonaktifkan</p>
+            <p class="text-xs text-slate-400 font-medium">Kamera dinonaktifkan</p>
           </div>
         </div>
 
@@ -132,7 +139,7 @@
       </div>
     </section>
 
-    <!-- Tab 2: Jamaah -->
+    <!-- Tab 2: Jamaah (Dengan Pencarian) -->
     <section id="tab-jamaah" class="hidden space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
@@ -146,6 +153,11 @@
             </a>
             <span id="jamaah-count" class="text-xs text-emerald-400 font-bold bg-slate-900 px-2 py-1 rounded-lg">0 Orang</span>
           </div>
+        </div>
+
+        <!-- Kolom Pencarian Jamaah -->
+        <div>
+          <input type="text" id="jamaah-search-input" placeholder="🔍 Cari nama atau ID santri..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
         </div>
       </div>
 
@@ -173,37 +185,46 @@
     <!-- Tab 3: Rekap, Edit Status & Simpan Alfa -->
     <section id="tab-rekap" class="hidden space-y-4">
       
-      <!-- Pemilih Mode Periode -->
+      <!-- Pemilih Mode Periode (Hanya Hari Ini & Rentang Tanggal) -->
       <div class="bg-slate-800 p-1.5 rounded-2xl border border-slate-700 flex gap-1.5 text-xs">
         <button id="btn-p-today" onclick="switchPeriod('today')" class="flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow">
-          Hari Ini
+          Hari Ini (5 Waktu)
         </button>
-        <button id="btn-p-week" onclick="switchPeriod('week')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
-          7 Hari (Mingguan)
-        </button>
-        <button id="btn-p-month" onclick="switchPeriod('month')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
-          Bulanan
+        <button id="btn-p-range" onclick="switchPeriod('range')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
+          Pilih Rentang Tanggal
         </button>
       </div>
 
-      <div id="month-picker-container" class="hidden bg-slate-800 p-2.5 rounded-2xl border border-slate-700 flex items-center justify-between gap-2">
-        <label for="month-select" class="text-xs font-semibold text-slate-400 shrink-0">Pilih Bulan:</label>
-        <select id="month-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 flex-1"></select>
+      <!-- Pemilih Tanggal Rentang (Khusus Mode Rentang) -->
+      <div id="range-picker-container" class="hidden bg-slate-800 p-3 rounded-2xl border border-slate-700 space-y-2 text-xs">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[10px] font-semibold text-slate-400 block mb-1">DARI TANGGAL:</label>
+            <input type="date" id="range-start-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="text-[10px] font-semibold text-slate-400 block mb-1">SAMPAI TANGGAL:</label>
+            <input type="date" id="range-end-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
+          </div>
+        </div>
+        <button onclick="renderRekapView()" class="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold rounded-xl text-xs transition">
+          🔍 Tampilkan Rekap Rentang
+        </button>
       </div>
 
       <!-- 3 Kartu Angka Statistik -->
       <div class="grid grid-cols-3 gap-2">
         <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-1" class="text-[11px] text-slate-400">Hadir/Izin</span>
+          <span id="label-stat-1" class="text-[11px] text-slate-400">Total Hadir</span>
           <p id="today-count" class="text-lg font-bold text-emerald-400 mt-0.5">0</p>
         </div>
         <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-2" class="text-[11px] text-slate-400">Belum Absen</span>
+          <span id="label-stat-2" class="text-[11px] text-slate-400">Total Alfa</span>
           <p id="absent-count" class="text-lg font-bold text-rose-400 mt-0.5">0</p>
         </div>
         <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-3" class="text-[11px] text-slate-400">Total Jamaah</span>
-          <p id="total-registered-count" class="text-lg font-bold text-amber-300 mt-0.5">0</p>
+          <span id="label-stat-3" class="text-[11px] text-slate-400">Target/Anak</span>
+          <p id="total-registered-count" class="text-lg font-bold text-amber-300 mt-0.5">5 Sesi</p>
         </div>
       </div>
 
@@ -211,7 +232,7 @@
       <div class="bg-slate-800 rounded-2xl p-2.5 border border-slate-700 flex gap-2">
         <input type="text" id="rekap-search-input" placeholder="🔍 Cari nama atau ID santri..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
         <button id="btn-save-alfa-sheet" onclick="saveAlfaToSpreadsheet()" title="Simpan santri belum hadir menjadi baris Alfa di Spreadsheet" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] transition shrink-0 flex items-center gap-1">
-          📥 Catat Alfa ke Sheet
+          📥 Catat Alfa Sesi Ini
         </button>
       </div>
 
@@ -219,16 +240,16 @@
       <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-700/60">
           <div id="daily-filter-tabs" class="flex space-x-1">
-            <button id="filter-btn-absent" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white shadow">
-              Belum Absen (<span id="badge-absent">0</span>)
+            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow">
+              Semua Santri
             </button>
-            <button id="filter-btn-present" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
-              Sudah Absen
+            <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
+              Ada Alfa Hari Ini
             </button>
           </div>
 
           <div id="periodic-header-title" class="hidden text-xs font-bold text-amber-400 truncate">
-            Evaluasi Disiplin Santri
+            Rekap Rentang Tanggal
           </div>
           
           <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2.5 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1 shrink-0">
@@ -236,7 +257,7 @@
           </button>
         </div>
 
-        <div id="rekap-display-list" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
+        <div id="rekap-display-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
       </div>
     </section>
 
@@ -250,6 +271,17 @@
           <span>✏️</span> Koreksi Status Santri
         </h3>
         <p id="edit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5">Nama Santri</p>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs font-semibold text-slate-300">Pilih Sholat:</label>
+        <select id="edit-select-prayer" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
+          <option value="Subuh">Subuh</option>
+          <option value="Dzuhur">Dzuhur</option>
+          <option value="Ashar">Ashar</option>
+          <option value="Maghrib">Maghrib</option>
+          <option value="Isya">Isya</option>
+        </select>
       </div>
 
       <div class="space-y-2">
@@ -297,8 +329,8 @@
     let html5QrCode = null;
     let isScanning = false;
     
-    let currentPeriod = 'today';
-    let currentRekapFilter = 'absent';
+    let currentPeriod = 'today'; // 'today' atau 'range'
+    let currentDailyFilter = 'all'; // 'all' atau 'alfa'
     let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
     let activeEditingRecord = null;
@@ -306,10 +338,7 @@
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
-    const namaBulanIndo = [
-      "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-      "Juli", "Agustus", "September", "Oktober", "November", "Desember"
-    ];
+    const prayerList = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
 
     function saveState() {
       localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
@@ -334,11 +363,17 @@
       return str;
     }
 
+    function getTodayString() {
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    }
+
     function getSantriMasterName(id) {
       const p = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(id).trim().toLowerCase());
       return p ? p.name : '';
     }
 
+    // Status Presensi (Scan)
     window.setAttendanceStatus = function(status) {
       currentCheckInStatus = status;
 
@@ -362,44 +397,29 @@
       }
     };
 
-    function populateMonthDropdown() {
-      const select = document.getElementById('month-select');
-      const currentSelected = select.value;
-      select.innerHTML = '';
+    // Filter Harian (Semua vs Ada Alfa)
+    window.setDailyFilter = function(filter) {
+      currentDailyFilter = filter;
+      const btnAll = document.getElementById('filter-btn-all-daily');
+      const btnAlfa = document.getElementById('filter-btn-has-alfa');
 
-      const now = new Date();
-      for (let i = 0; i < 12; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const val = `${y}-${m}`;
-        const label = `${namaBulanIndo[d.getMonth()]} ${y}` + (i === 0 ? ' (Bulan Ini)' : '');
-
-        const opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = label;
-        select.appendChild(opt);
+      if (filter === 'all') {
+        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow';
+        btnAlfa.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+      } else {
+        btnAlfa.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white shadow';
+        btnAll.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
       }
+      renderRekapView();
+    };
 
-      if (currentSelected) {
-        select.value = currentSelected;
-      }
-    }
-
-    function getDaysInSpecificMonth(yearMonthStr) {
-      const parts = yearMonthStr.split('-');
-      const y = parseInt(parts[0], 10);
-      const m = parseInt(parts[1], 10);
-      return new Date(y, m, 0).getDate();
-    }
-
+    // Sinkronisasi Google Sheets
     window.handleCloudMaster = function(res) {
       if (res && res.status === 'success') {
         if (Array.isArray(res.jamaah) && res.jamaah.length > 0) {
           jamaahData = res.jamaah;
         }
         if (Array.isArray(res.logs)) {
-          // Normalisasi logs agar nama santri tidak pernah hilang
           logsData = res.logs.map(l => {
             if (!l.name || String(l.name).trim() === '') {
               l.name = getSantriMasterName(l.jamaahId) || ('Santri ' + l.jamaahId);
@@ -432,6 +452,7 @@
       showFeedback('success', 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
     });
 
+    // Audio & Haptic
     function playBeep(type = 'success') {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -501,10 +522,9 @@
       lastScanCooldown[cleanId] = nowTs;
 
       const prayer = document.getElementById('prayer-select').value;
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
+      const todayStr = getTodayString();
       const person = jamaahData.find(j => String(j.id).trim().toLowerCase() === cleanId.toLowerCase());
+      
       if (!person) {
         showFeedback('error', 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database.`);
         playBeep('error');
@@ -532,7 +552,7 @@
         category: person.category,
         prayer: prayer,
         date: todayStr,
-        time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         status: currentCheckInStatus
       };
 
@@ -598,7 +618,7 @@
       window.feedbackTimer = setTimeout(() => box.classList.add('hidden'), 4000);
     }
 
-    // Kamera
+    // Kontrol Kamera (Terkunci Tengah)
     const btnStart = document.getElementById('btn-start-camera');
     const btnStop = document.getElementById('btn-stop-camera');
     const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -678,6 +698,7 @@
       });
     });
 
+    // Cetak Kartu Digital
     function showQrCard(id, name, category) {
       const box = document.getElementById('qr-preview-box');
       const container = document.getElementById('qrcode-container');
@@ -767,17 +788,27 @@
       win.document.close();
     }
 
+    // Render Tab Jamaah (Dengan Pencarian Instan)
     function renderJamaahList() {
       const container = document.getElementById('jamaah-list');
-      document.getElementById('jamaah-count').textContent = jamaahData.length + ' Orang';
+      const keyword = (document.getElementById('jamaah-search-input')?.value || '').toLowerCase().trim();
+      
+      let list = jamaahData;
+      if (keyword) {
+        list = jamaahData.filter(j => 
+          j.name.toLowerCase().includes(keyword) || String(j.id).toLowerCase().includes(keyword)
+        );
+      }
+
+      document.getElementById('jamaah-count').textContent = `${list.length}/${jamaahData.length} Orang`;
       container.innerHTML = '';
 
-      if (jamaahData.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Sedang memuat data dari Database Jamaah...</p>';
+      if (list.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Tidak ada santri yang sesuai.</p>';
         return;
       }
 
-      jamaahData.forEach(j => {
+      list.forEach(j => {
         const div = document.createElement('div');
         div.className = 'flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs';
         div.innerHTML = `
@@ -793,84 +824,82 @@
       });
     }
 
-    // --- REKAP EVALUASI ---
+    document.getElementById('jamaah-search-input').addEventListener('input', renderJamaahList);
+
+    // --- REKAP EVALUASI (HARI INI 5 WAKTU & RENTANG TANGGAL) ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
       const btnToday = document.getElementById('btn-p-today');
-      const btnWeek = document.getElementById('btn-p-week');
-      const btnMonth = document.getElementById('btn-p-month');
-      const monthContainer = document.getElementById('month-picker-container');
+      const btnRange = document.getElementById('btn-p-range');
+      const rangeContainer = document.getElementById('range-picker-container');
 
-      [btnToday, btnWeek, btnMonth].forEach(b => {
+      [btnToday, btnRange].forEach(b => {
         b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
       });
 
       if (period === 'today') {
         btnToday.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
-        monthContainer.classList.add('hidden');
+        rangeContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.remove('hidden');
-        document.getElementById('label-stat-1').textContent = 'Hadir/Izin';
-        document.getElementById('label-stat-2').textContent = 'Belum Absen';
-        document.getElementById('label-stat-3').textContent = 'Total Jamaah';
-      } else if (period === 'week') {
-        btnWeek.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
-        monthContainer.classList.add('hidden');
-        document.getElementById('daily-filter-tabs').classList.add('hidden');
-        document.getElementById('periodic-header-title').classList.remove('hidden');
-        document.getElementById('periodic-header-title').textContent = 'Evaluasi 7 Hari (Target 35 Waktu)';
-        document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
-      } else if (period === 'month') {
-        btnMonth.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
-        monthContainer.classList.remove('hidden');
+      } else {
+        btnRange.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
+        rangeContainer.classList.remove('hidden');
         document.getElementById('daily-filter-tabs').classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
+
+        // Inisialisasi default rentang 7 hari terakhir jika belum diisi
+        const todayStr = getTodayString();
+        if (!document.getElementById('range-end-date').value) {
+          document.getElementById('range-end-date').value = todayStr;
+        }
+        if (!document.getElementById('range-start-date').value) {
+          const past = new Date();
+          past.setDate(past.getDate() - 6);
+          document.getElementById('range-start-date').value = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
+        }
       }
 
       renderRekapView();
     };
 
-    document.getElementById('month-select').addEventListener('change', () => {
-      renderRekapView();
-    });
-
-    const btnFilterAbsent = document.getElementById('filter-btn-absent');
-    const btnFilterPresent = document.getElementById('filter-btn-present');
-
-    btnFilterAbsent.addEventListener('click', () => {
-      currentRekapFilter = 'absent';
-      btnFilterAbsent.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white shadow';
-      btnFilterPresent.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      renderRekapView();
-    });
-
-    btnFilterPresent.addEventListener('click', () => {
-      currentRekapFilter = 'present';
-      btnFilterPresent.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow';
-      btnFilterAbsent.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      renderRekapView();
-    });
-
     document.getElementById('rekap-search-input').addEventListener('input', () => {
       renderRekapView();
     });
 
-    // --- FUNGSI MODAL KOREKSI STATUS ---
+    // Helper: Badge Status Kecil untuk Matriks 5 Waktu
+    function getPrayerBadge(prayerName, status) {
+      if (!status || status === 'Belum Ada' || status === 'Alfa') {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-800">${prayerName}: ❌</span>`;
+      }
+      if (status === 'Masbuq') {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-700">${prayerName}: ⚠️</span>`;
+      }
+      if (status === 'Izin Pulang') {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950 text-blue-300 border border-blue-700">${prayerName}: 🏠</span>`;
+      }
+      if (status === 'Sakit') {
+        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-700">${prayerName}: 💊</span>`;
+      }
+      return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">${prayerName}: ✅</span>`;
+    }
+
+    // Modal Koreksi
     window.openEditModal = function(jamaahId, name, prayer, date, currentStatus) {
-      // Pastikan nama santri selalu terisi
       const validName = (name && String(name).trim() !== '') ? name : (getSantriMasterName(jamaahId) || ('Santri ' + jamaahId));
       activeEditingRecord = { jamaahId, name: validName, prayer, date };
       
-      document.getElementById('edit-modal-subtitle').textContent = `${validName} (${jamaahId}) • Sholat ${prayer} • ${date}`;
+      document.getElementById('edit-modal-subtitle').textContent = `${validName} (${jamaahId}) • ${date}`;
+      document.getElementById('edit-select-prayer').value = prayer || document.getElementById('prayer-select').value;
       document.getElementById('edit-select-status').value = currentStatus || 'Tepat Waktu';
       document.getElementById('modal-edit-status').classList.remove('hidden');
     };
@@ -883,13 +912,13 @@
     window.submitStatusCorrection = function() {
       if (!activeEditingRecord) return;
       const newStatus = document.getElementById('edit-select-status').value;
-      const { jamaahId, prayer, date, name } = activeEditingRecord;
+      const selectedPrayer = document.getElementById('edit-select-prayer').value;
+      const { jamaahId, date, name } = activeEditingRecord;
 
-      // 1. Perbarui data lokal langsung
       let found = false;
       logsData.forEach(l => {
         const idMatch = String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase();
-        if (idMatch && l.prayer === prayer && parseDateNormalized(l.date) === date) {
+        if (idMatch && l.prayer === selectedPrayer && parseDateNormalized(l.date) === date) {
           l.status = newStatus;
           l.name = name;
           found = true;
@@ -897,15 +926,14 @@
       });
 
       if (!found) {
-        const now = new Date();
         logsData.unshift({
           id: 'LOG-' + Date.now(),
           jamaahId: String(jamaahId).trim(),
           name: name,
           category: 'Santri',
-          prayer: prayer,
+          prayer: selectedPrayer,
           date: date,
-          time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
           status: newStatus
         });
       }
@@ -913,24 +941,21 @@
       saveState();
       renderRekapView();
       closeEditModal();
-      showFeedback('success', 'Menyimpan Koreksi...', `${name} diubah ke ${newStatus}`);
+      showFeedback('success', 'Menyimpan Koreksi...', `${name} (${selectedPrayer}) diubah ke ${newStatus}`);
 
-      // 2. Kirim update ke Google Spreadsheet
       if (SCRIPT_URL) {
-        const payload = JSON.stringify({
-          action: 'update_status',
-          jamaahId: String(jamaahId).trim(),
-          name: name,
-          prayer: prayer,
-          date: date,
-          newStatus: newStatus
-        });
-
         fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: payload
+          body: JSON.stringify({
+            action: 'update_status',
+            jamaahId: String(jamaahId).trim(),
+            name: name,
+            prayer: selectedPrayer,
+            date: date,
+            newStatus: newStatus
+          })
         }).then(() => {
           setTimeout(() => {
             syncFromCloud();
@@ -943,10 +968,9 @@
       }
     };
 
-    // --- FUNGSI SIMPAN ALFA HARI INI KE SPREADSHEET SECARA MASSAL ---
+    // Simpan Alfa Massal Sesi Sholat Aktif ke Spreadsheet
     window.saveAlfaToSpreadsheet = function() {
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const todayStr = getTodayString();
       const prayer = document.getElementById('prayer-select').value;
 
       const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr && l.prayer === prayer);
@@ -954,10 +978,10 @@
       const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
 
       if (absentList.length === 0) {
-        return alert(`Semua santri sudah tercatat pada sholat ${prayer}. Tidak ada data alfa yang perlu disimpan.`);
+        return alert(`Semua santri sudah memiliki catatan pada sholat ${prayer} hari ini.`);
       }
 
-      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} ke Google Sheets sebagai 'Alfa'?`;
+      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} hari ini ke Google Sheets sebagai 'Alfa'?`;
       if (!confirm(confirmMsg)) return;
 
       const recordsToSend = absentList.map(j => ({
@@ -966,7 +990,7 @@
         category: j.category,
         prayer: prayer,
         date: todayStr,
-        time: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+        time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
       }));
 
       recordsToSend.forEach(r => {
@@ -1001,141 +1025,139 @@
       }
     };
 
+    // Render Rekap Utama
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
-      const prayer = document.getElementById('prayer-select').value;
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
+      const todayStr = getTodayString();
 
-      // MODE 1: HARI INI
+      // ==========================================
+      // MODE 1: HARI INI (MATRIKS 5 WAKTU LENGKAP)
+      // ==========================================
       if (currentPeriod === 'today') {
-        const rawPresentLogs = logsData.filter(l => 
-          parseDateNormalized(l.date) === todayStr && 
-          l.prayer === prayer
-        );
+        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
 
-        const uniquePresentMap = new Map();
-        rawPresentLogs.forEach(log => {
-          const cleanId = String(log.jamaahId).trim().toLowerCase();
-          if (!uniquePresentMap.has(cleanId)) {
-            // Pastikan nama selalu terisi
-            if (!log.name || String(log.name).trim() === '') {
-              log.name = getSantriMasterName(log.jamaahId) || ('Santri ' + log.jamaahId);
+        let totalHadirSemua = 0;
+        let totalAlfaSemua = 0;
+
+        let dailyAnalysis = jamaahData.map(santri => {
+          const sId = String(santri.id).trim().toLowerCase();
+          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+
+          let prayerStatus = { Subuh: '', Dzuhur: '', Ashar: '', Maghrib: '', Isya: '' };
+          let hadirHariIni = 0;
+          let alfaHariIni = 0;
+
+          prayerList.forEach(p => {
+            const pLog = sLogs.find(l => l.prayer === p);
+            if (pLog) {
+              prayerStatus[p] = pLog.status;
+              if (pLog.status === 'Tepat Waktu' || pLog.status === 'Masbuq') {
+                hadirHariIni++;
+              } else if (pLog.status === 'Alfa') {
+                alfaHariIni++;
+              }
+            } else {
+              prayerStatus[p] = 'Belum Ada';
+              alfaHariIni++;
             }
-            uniquePresentMap.set(cleanId, log);
-          }
+          });
+
+          totalHadirSemua += hadirHariIni;
+          totalAlfaSemua += alfaHariIni;
+
+          return {
+            id: santri.id,
+            name: santri.name,
+            category: santri.category,
+            prayerStatus: prayerStatus,
+            hadirCount: hadirHariIni,
+            alfaCount: alfaHariIni,
+            isComplete: hadirHariIni === 5
+          };
         });
 
-        const presentLogs = Array.from(uniquePresentMap.values());
-        const presentIds = new Set(uniquePresentMap.keys());
-        const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
-
-        document.getElementById('today-count').textContent = presentLogs.length;
-        document.getElementById('absent-count').textContent = absentList.length;
-        document.getElementById('badge-absent').textContent = absentList.length;
-        document.getElementById('total-registered-count').textContent = jamaahData.length;
-
-        if (currentRekapFilter === 'absent') {
-          let filteredAbsent = absentList;
-          if (searchKeyword) {
-            filteredAbsent = absentList.filter(j => 
-              j.name.toLowerCase().includes(searchKeyword) || String(j.id).toLowerCase().includes(searchKeyword)
-            );
-          }
-
-          if (filteredAbsent.length === 0) {
-            container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Tidak ada santri yang belum hadir.</p>`;
-            return;
-          }
-
-          filteredAbsent.forEach((j, idx) => {
-            container.innerHTML += `
-              <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-rose-900/40 text-xs">
-                <div>
-                  <p class="font-bold text-rose-300">${idx + 1}. ${j.name}</p>
-                  <p class="text-slate-400 font-mono text-[11px]">${j.id} • ${j.category}</p>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-950 text-rose-300 border border-rose-800">Belum Hadir</span>
-                  <button onclick="openEditModal('${j.id}', '${j.name}', '${prayer}', '${todayStr}', 'Alfa')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
-                    ✏️
-                  </button>
-                </div>
-              </div>
-            `;
-          });
-        } else {
-          let filteredPresent = presentLogs;
-          if (searchKeyword) {
-            filteredPresent = presentLogs.filter(l => 
-              l.name.toLowerCase().includes(searchKeyword) || String(l.jamaahId).toLowerCase().includes(searchKeyword)
-            );
-          }
-
-          if (filteredPresent.length === 0) {
-            container.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">Belum ada catatan pada sholat ${prayer}.</p>`;
-            return;
-          }
-
-          filteredPresent.forEach((log, idx) => {
-            let badgeStyle = 'bg-emerald-950 text-emerald-300 border-emerald-700';
-            if (log.status === 'Masbuq') badgeStyle = 'bg-amber-950 text-amber-300 border-amber-700';
-            else if (log.status === 'Izin Pulang') badgeStyle = 'bg-blue-950 text-blue-300 border-blue-700';
-            else if (log.status === 'Sakit') badgeStyle = 'bg-purple-950 text-purple-300 border-purple-700';
-            else if (log.status === 'Alfa') badgeStyle = 'bg-rose-950 text-rose-300 border-rose-700';
-
-            const displayName = log.name || getSantriMasterName(log.jamaahId) || ('Santri ' + log.jamaahId);
-
-            container.innerHTML += `
-              <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs">
-                <div>
-                  <p class="font-bold text-slate-200">${idx + 1}. ${displayName}</p>
-                  <p class="text-slate-400 text-[11px]">${log.prayer} • ${log.time}</p>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${badgeStyle}">
-                    ${log.status}
-                  </span>
-                  <button onclick="openEditModal('${log.jamaahId}', '${displayName}', '${log.prayer}', '${parseDateNormalized(log.date)}', '${log.status}')" title="Koreksi status santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
-                    ✏️
-                  </button>
-                </div>
-              </div>
-            `;
-          });
+        // Filter pencarian
+        if (searchKeyword) {
+          dailyAnalysis = dailyAnalysis.filter(j => 
+            j.name.toLowerCase().includes(searchKeyword) || String(j.id).toLowerCase().includes(searchKeyword)
+          );
         }
 
-      // MODE 2: MINGGUAN / BULANAN
+        // Filter: Semua Santri vs Yang Ada Alfa Hari Ini
+        if (currentDailyFilter === 'alfa') {
+          dailyAnalysis = dailyAnalysis.filter(j => j.alfaCount > 0);
+        }
+
+        // Urutkan yang alfa paling banyak di atas
+        dailyAnalysis.sort((a, b) => b.alfaCount - a.alfaCount);
+
+        document.getElementById('today-count').textContent = totalHadirSemua;
+        document.getElementById('absent-count').textContent = totalAlfaSemua;
+        document.getElementById('total-registered-count').textContent = '5 Sesi';
+
+        if (dailyAnalysis.length === 0) {
+          container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Tidak ada santri yang sesuai kriteria.</p>`;
+          return;
+        }
+
+        dailyAnalysis.forEach((j, idx) => {
+          const hasAlfa = j.alfaCount > 0;
+          container.innerHTML += `
+            <div class="p-2.5 bg-slate-900 rounded-xl border ${hasAlfa ? 'border-rose-900/40' : 'border-slate-700/60'} text-xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="font-bold ${hasAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${j.name}</p>
+                  <p class="text-slate-400 font-mono text-[10px]">${j.id} • Hadir: ${j.hadirCount}/5 • Alfa: ${j.alfaCount}x</p>
+                </div>
+                <button onclick="openEditModal('${j.id}', '${j.name}', '', '${todayStr}', '')" title="Koreksi salah satu sholat santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
+                  ✏️ Koreksi
+                </button>
+              </div>
+              <!-- Matriks 5 Waktu Sholat -->
+              <div class="flex flex-wrap gap-1 pt-0.5 border-t border-slate-800/80">
+                ${prayerList.map(p => getPrayerBadge(p, j.prayerStatus[p])).join('')}
+              </div>
+            </div>
+          `;
+        });
+
+      // ==========================================
+      // MODE 2: RENTANG TANGGAL BEBAS
+      // ==========================================
       } else {
-        let targetPerSantri = 0;
-        let validLogs = [];
+        const startDate = document.getElementById('range-start-date').value;
+        const endDate = document.getElementById('range-end-date').value;
 
-        if (currentPeriod === 'week') {
-          targetPerSantri = 7 * 5;
-          const cutoff = new Date();
-          cutoff.setDate(cutoff.getDate() - 6);
-          const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
-          validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
-
-        } else if (currentPeriod === 'month') {
-          const selectedMonthVal = document.getElementById('month-select').value;
-          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal);
-          targetPerSantri = daysInMonth * 5;
-
-          const parts = selectedMonthVal.split('-');
-          const monthIdx = parseInt(parts[1], 10) - 1;
-          const year = parts[0];
-          document.getElementById('periodic-header-title').textContent = `Evaluasi ${namaBulanIndo[monthIdx]} ${year} (${daysInMonth} Hari - ${targetPerSantri} Sesi)`;
-
-          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
+        if (!startDate || !endDate) {
+          container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Silakan pilih tanggal mulai dan tanggal selesai di atas.</p>';
+          return;
         }
+
+        if (startDate > endDate) {
+          container.innerHTML = '<p class="text-xs text-rose-400 py-4 text-center">Tanggal mulai tidak boleh lebih besar dari tanggal selesai.</p>';
+          return;
+        }
+
+        // Hitung selisih hari inklusif
+        const d1 = new Date(startDate);
+        const d2 = new Date(endDate);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+        const targetPerSantri = diffDays * 5;
+
+        document.getElementById('periodic-header-title').textContent = `Rekap ${startDate} s/d ${endDate} (${diffDays} Hari - Target ${targetPerSantri} Sesi)`;
+
+        // Ambil log yang berada di dalam rentang
+        const validLogs = logsData.filter(l => {
+          const d = parseDateNormalized(l.date);
+          return d >= startDate && d <= endDate;
+        });
 
         let ranking = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
           const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-          
+
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const totalTercatat = uniqueSessions.size;
 
@@ -1143,7 +1165,6 @@
           const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
           const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
           const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
-
           const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
 
           return {
@@ -1174,9 +1195,13 @@
         document.getElementById('absent-count').textContent = totalAlfaAll;
         document.getElementById('total-registered-count').textContent = `${targetPerSantri} Sesi`;
 
+        if (ranking.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Tidak ada santri yang sesuai.</p>';
+          return;
+        }
+
         ranking.forEach((r, idx) => {
           const isHighAlfa = r.alfa > (targetPerSantri * 0.2);
-          
           let noteArr = [];
           if (r.masbuq > 0) noteArr.push(`<span class="text-amber-400 font-bold">${r.masbuq}x Masbuq</span>`);
           if (r.pulang > 0) noteArr.push(`<span class="text-blue-400 font-bold">${r.pulang}x Pulang</span>`);
@@ -1200,82 +1225,53 @@
       }
     }
 
-    // Salin Laporan WhatsApp
+    // Salin Laporan WhatsApp (Adaptif Harian vs Rentang)
     document.getElementById('btn-copy-absent').addEventListener('click', () => {
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const prayer = document.getElementById('prayer-select').value;
+      const todayStr = getTodayString();
       let text = "";
 
       if (currentPeriod === 'today') {
-        const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr && l.prayer === prayer);
-        const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
-        const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
+        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
 
-        const masbuqList = rawPresentLogs.filter(l => l.status === 'Masbuq');
-        const sakitList = rawPresentLogs.filter(l => l.status === 'Sakit');
-        const pulangList = rawPresentLogs.filter(l => l.status === 'Izin Pulang');
+        text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n\n`;
 
-        if (absentList.length === 0 && sakitList.length === 0 && pulangList.length === 0 && masbuqList.length === 0) {
-          return alert('Semua santri hadir tepat waktu.');
-        }
+        let adaCatatan = false;
+        jamaahData.forEach((santri, idx) => {
+          const sId = String(santri.id).trim().toLowerCase();
+          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
 
-        text = `*LAPORAN PRESENSI SHOLAT*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n✨ Sesi: Sholat ${prayer}\n\n`;
-
-        if (absentList.length > 0) {
-          text += `❌ *BELUM HADIR / ALFA (${absentList.length} orang):*\n`;
-          absentList.forEach((j, i) => {
-            text += `${i + 1}. ${j.name} (${j.id})\n`;
+          let bolos = [];
+          prayerList.forEach(p => {
+            const pLog = sLogs.find(l => l.prayer === p);
+            if (!pLog || pLog.status === 'Alfa') {
+              bolos.push(p);
+            }
           });
-          text += `\n`;
-        }
 
-        if (masbuqList.length > 0) {
-          text += `⚠️ *MASBUQ (${masbuqList.length} orang):*\n`;
-          masbuqList.forEach((m, i) => {
-            text += `${i + 1}. ${m.name} (${m.jamaahId})\n`;
-          });
-          text += `\n`;
-        }
+          if (bolos.length > 0) {
+            adaCatatan = true;
+            text += `${santri.name} (${santri.id}) ➔ *Tidak Sholat: ${bolos.join(', ')}*\n`;
+          }
+        });
 
-        if (sakitList.length > 0) {
-          text += `💊 *SEDANG SAKIT (${sakitList.length} orang):*\n`;
-          sakitList.forEach((s, i) => {
-            text += `${i + 1}. ${s.name} (${s.jamaahId})\n`;
-          });
-          text += `\n`;
-        }
-
-        if (pulangList.length > 0) {
-          text += `🏠 *IZIN PULANG (${pulangList.length} orang):*\n`;
-          pulangList.forEach((p, i) => {
-            text += `${i + 1}. ${p.name} (${p.jamaahId})\n`;
-          });
+        if (!adaCatatan) {
+          text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu hari ini!`;
         }
 
       } else {
-        const isMonth = currentPeriod === 'month';
-        let targetPerSantri = 0;
-        let judul = '';
-        let validLogs = [];
+        const startDate = document.getElementById('range-start-date').value;
+        const endDate = document.getElementById('range-end-date').value;
 
-        if (isMonth) {
-          const selectedMonthVal = document.getElementById('month-select').value;
-          const daysInMonth = getDaysInSpecificMonth(selectedMonthVal);
-          targetPerSantri = daysInMonth * 5;
+        if (!startDate || !endDate) return alert('Pilih rentang tanggal terlebih dahulu.');
+        const d1 = new Date(startDate);
+        const d2 = new Date(endDate);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+        const targetPerSantri = diffDays * 5;
 
-          const parts = selectedMonthVal.split('-');
-          const monthIdx = parseInt(parts[1], 10) - 1;
-          judul = `Bulan ${namaBulanIndo[monthIdx]} ${parts[0]} (${daysInMonth} Hari)`;
-          validLogs = logsData.filter(l => parseDateNormalized(l.date).startsWith(selectedMonthVal));
-        } else {
-          targetPerSantri = 7 * 5;
-          judul = '7 Hari Terakhir';
-          const cutoff = new Date();
-          cutoff.setDate(cutoff.getDate() - 6);
-          const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
-          validLogs = logsData.filter(l => parseDateNormalized(l.date) >= cutoffStr);
-        }
+        const validLogs = logsData.filter(l => {
+          const d = parseDateNormalized(l.date);
+          return d >= startDate && d <= endDate;
+        });
 
         const ranking = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
@@ -1302,9 +1298,9 @@
         }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
 
         const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
-        if (listCatatan.length === 0) return alert('Semua santri disiplin, tidak ada catatan.');
+        if (listCatatan.length === 0) return alert('Semua santri disiplin di rentang tanggal ini.');
 
-        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${judul}\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
+        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${startDate} s/d ${endDate} (${diffDays} Hari)\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
         listCatatan.forEach((r, i) => {
           let ket = [];
           if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
@@ -1321,7 +1317,6 @@
       }).catch(() => alert('Gagal menyalin.'));
     });
 
-    populateMonthDropdown();
     renderJamaahList();
     renderRekapView();
   </script>
