@@ -2,1323 +2,234 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#047857">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Presensi Sholat - PPTQ Al Husna Lestari</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cetak Kartu Santri - PPTQ Al Husna Lestari</title>
   
-  <link rel="manifest" href="./manifest.json">
-  <link rel="icon" type="image/svg+xml" href="./icon.svg">
-
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   
   <style>
-    body {
-      overscroll-behavior-y: contain;
-      -webkit-tap-highlight-color: transparent;
+    @media print {
+      /* Sembunyikan semua kontrol saat print */
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background: white !important;
+        color: black !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 1cm;
+      }
+      .card-item {
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
     }
-    #reader video {
-      margin: 0 auto !important;
-      display: block !important;
-      object-fit: cover !important;
-      border-radius: 0.75rem;
-    }
-    #reader {
-      width: 100% !important;
-      border: none !important;
+
+    /* Ukuran Standar Kartu ID */
+    .id-card-size {
+      width: 8.5cm;
+      height: 5.4cm;
+      box-sizing: border-box;
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans p-4">
 
-  <!-- Header -->
-  <header class="bg-emerald-800 border-b border-emerald-700 sticky top-0 z-40 shadow-md">
-    <div class="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2.5 min-w-0">
-        <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-amber-300 shadow shrink-0 text-lg">
-          🕌
-        </div>
-        <div class="min-w-0">
-          <h1 class="text-sm font-bold leading-tight truncate text-white">Presensi Jamaah</h1>
-          <p class="text-[10px] text-emerald-200 truncate font-medium">PPTQ Al Husna Lestari</p>
-          <p id="live-clock" class="text-[9px] text-emerald-300 font-mono">Memuat jam...</p>
-        </div>
-      </div>
-      <div class="flex items-center space-x-1.5 shrink-0">
-        <button id="btn-sync-manual" class="px-2 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center gap-1">
-          🔄 Sync
-        </button>
-        <span id="current-prayer-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950 text-emerald-300 border border-emerald-600">
-          Subuh
-        </span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="flex-1 max-w-md w-full mx-auto p-4 pb-24 space-y-4">
+  <!-- Kontrol Navigasi & Pilihan Santri (Tidak Ikut Ter-print) -->
+  <div class="no-print max-w-4xl mx-auto space-y-4 mb-6">
     
-    <!-- Tab 1: Scanner View -->
-    <section id="tab-scan" class="space-y-4">
-      <div class="bg-gradient-to-r from-emerald-900 to-slate-800 p-3.5 rounded-2xl border border-emerald-700/60 shadow-lg text-center space-y-0.5">
-        <span class="text-xs uppercase tracking-wider text-emerald-400 font-bold">Sistem Presensi Sholat</span>
-        <h2 class="text-sm font-black text-amber-300 leading-snug">
-          Pondok Pesantren Tahfidzul Qur'an Al Husna Lestari
-        </h2>
-        <p class="text-[10px] text-slate-300">Pindai kartu santri atau gunakan input manual di bawah</p>
+    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 shadow-lg flex flex-col md:flex-row items-center justify-between gap-3">
+      <div>
+        <h1 class="text-base font-bold text-white flex items-center gap-2">
+          <span>🖨️</span> Cetak Kartu Presensi Santri
+        </h1>
+        <p class="text-xs text-slate-400">Pilih beberapa santri yang kehilangan kartu untuk dicetak sekaligus dalam kertas A4.</p>
       </div>
-
-      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 shadow-lg space-y-3">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-semibold text-slate-400">PILIH SESI SHOLAT</label>
-          <select id="prayer-select" class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs font-medium text-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500">
-            <option value="Subuh">Subuh</option>
-            <option value="Dzuhur">Dzuhur</option>
-            <option value="Ashar">Ashar</option>
-            <option value="Maghrib">Maghrib</option>
-            <option value="Isya">Isya</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Status Kehadiran Santri:</label>
-          <div class="grid grid-cols-4 gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-[11px]">
-            <button id="btn-st-tepat" onclick="setAttendanceStatus('Tepat Waktu')" class="py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow text-center">
-              ✅ Tepat
-            </button>
-            <button id="btn-st-masbuq" onclick="setAttendanceStatus('Masbuq')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-amber-300 transition text-center">
-              ⚠️ Masbuq
-            </button>
-            <button id="btn-st-pulang" onclick="setAttendanceStatus('Izin Pulang')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-blue-300 transition text-center">
-              🏠 Pulang
-            </button>
-            <button id="btn-st-sakit" onclick="setAttendanceStatus('Sakit')" class="py-1.5 rounded-lg font-semibold text-slate-400 hover:text-purple-300 transition text-center">
-              💊 Sakit
-            </button>
-          </div>
-        </div>
-
-        <!-- Wadah Kamera (Terkunci Tengah) -->
-        <div class="relative bg-slate-950 rounded-2xl overflow-hidden min-h-[260px] flex items-center justify-center border border-slate-700">
-          <div id="reader" class="w-full flex items-center justify-center"></div>
-          <div id="camera-placeholder" class="absolute inset-0 flex flex-col items-center justify-center space-y-2 pointer-events-none">
-            <div class="text-4xl">📷</div>
-            <p class="text-xs text-slate-400 font-medium">Kamera dinonaktifkan</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btn-start-camera" class="w-full py-2.5 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl text-xs font-semibold tracking-wide transition shadow">
-            Mulai Kamera
-          </button>
-          <button id="btn-stop-camera" disabled class="w-full py-2.5 px-3 bg-slate-700 text-slate-400 rounded-xl text-xs font-semibold tracking-wide transition disabled:opacity-50">
-            Matikan
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700">
-        <h2 class="text-xs font-semibold text-slate-400 mb-2">ABSENSI MANUAL / ID</h2>
-        <div class="flex space-x-2">
-          <input type="text" id="manual-id-input" placeholder="Ketik ID Santri (mis: 111)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-100">
-          <button id="btn-manual-submit" class="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 px-4 py-2 rounded-xl text-xs font-semibold text-white">
-            Absen
-          </button>
-        </div>
-      </div>
-
-      <div id="scan-feedback" class="hidden bg-slate-800 border-l-4 rounded-xl p-3 shadow-lg flex items-center space-x-3">
-        <div id="feedback-icon" class="text-2xl">✅</div>
-        <div class="flex-1">
-          <h3 id="feedback-title" class="text-xs font-bold leading-tight">Presensi Berhasil</h3>
-          <p id="feedback-msg" class="text-xs text-slate-400">Nama Jamaah (ID)</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Tab 2: Jamaah (Dengan Pencarian) -->
-    <section id="tab-jamaah" class="hidden space-y-4">
-      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-sm font-bold text-slate-200">Database Jamaah</h2>
-            <p class="text-[11px] text-slate-400">Tersinkron dari Google Sheets</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <a href="./cetak.html" target="_blank" class="px-2.5 py-1 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg shadow flex items-center gap-1 transition">
-              🖨️ Cetak Kartu
-            </a>
-            <span id="jamaah-count" class="text-xs text-emerald-400 font-bold bg-slate-900 px-2 py-1 rounded-lg">0 Orang</span>
-          </div>
-        </div>
-
-        <!-- Kolom Pencarian Jamaah -->
-        <div>
-          <input type="text" id="jamaah-search-input" placeholder="🔍 Cari nama atau ID santri..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
-        </div>
-      </div>
-
-      <div id="qr-preview-box" class="hidden bg-slate-800 rounded-2xl p-4 border border-emerald-500 text-center space-y-3 shadow-xl">
-        <h3 id="card-preview-name" class="font-bold text-sm text-emerald-400">Kartu Digital</h3>
-        <p id="card-preview-role" class="text-xs text-slate-400">Kategori</p>
-        <div id="qrcode-container" class="bg-white p-3 rounded-xl inline-block mx-auto shadow-inner"></div>
-        <p id="card-preview-id" class="text-xs font-mono font-bold text-slate-300">ID: -</p>
-        
-        <div class="pt-2 flex justify-center items-center gap-2">
-          <button onclick="printCurrentPreviewCard()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow flex items-center gap-1">
-            🖨️ Cetak Kartu Ini
-          </button>
-          <button id="btn-close-preview" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs text-slate-300">
-            Tutup
-          </button>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
-        <div id="jamaah-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
-      </div>
-    </section>
-
-    <!-- Tab 3: Rekap, Edit Status & Simpan Alfa -->
-    <section id="tab-rekap" class="hidden space-y-4">
-      
-      <!-- Pemilih Mode Periode (Hanya Hari Ini & Rentang Tanggal) -->
-      <div class="bg-slate-800 p-1.5 rounded-2xl border border-slate-700 flex gap-1.5 text-xs">
-        <button id="btn-p-today" onclick="switchPeriod('today')" class="flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow">
-          Hari Ini (5 Waktu)
+      <div class="flex items-center gap-2">
+        <button onclick="window.close()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs font-semibold text-slate-200 transition">
+          Kembali
         </button>
-        <button id="btn-p-range" onclick="switchPeriod('range')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
-          Pilih Rentang Tanggal
-        </button>
-      </div>
-
-      <!-- Pemilih Tanggal Rentang (Khusus Mode Rentang) -->
-      <div id="range-picker-container" class="hidden bg-slate-800 p-3 rounded-2xl border border-slate-700 space-y-2 text-xs">
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="text-[10px] font-semibold text-slate-400 block mb-1">DARI TANGGAL:</label>
-            <input type="date" id="range-start-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
-          </div>
-          <div>
-            <label class="text-[10px] font-semibold text-slate-400 block mb-1">SAMPAI TANGGAL:</label>
-            <input type="date" id="range-end-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-emerald-400 font-bold focus:outline-none focus:border-emerald-500">
-          </div>
-        </div>
-        <button onclick="renderRekapView()" class="w-full py-1.5 bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-white font-bold rounded-xl text-xs transition">
-          🔍 Tampilkan Rekap Rentang
-        </button>
-      </div>
-
-      <!-- 3 Kartu Angka Statistik -->
-      <div class="grid grid-cols-3 gap-2">
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-1" class="text-[11px] text-slate-400">Total Hadir</span>
-          <p id="today-count" class="text-lg font-bold text-emerald-400 mt-0.5">0</p>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-2" class="text-[11px] text-slate-400">Total Alfa</span>
-          <p id="absent-count" class="text-lg font-bold text-rose-400 mt-0.5">0</p>
-        </div>
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-3" class="text-[11px] text-slate-400">Target/Anak</span>
-          <p id="total-registered-count" class="text-lg font-bold text-amber-300 mt-0.5">5 Sesi</p>
-        </div>
-      </div>
-
-      <!-- Fitur Pencarian & Tombol Alfa Massal -->
-      <div class="bg-slate-800 rounded-2xl p-2.5 border border-slate-700 flex gap-2">
-        <input type="text" id="rekap-search-input" placeholder="🔍 Cari nama atau ID santri..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
-        <button id="btn-save-alfa-sheet" onclick="saveAlfaToSpreadsheet()" title="Simpan santri belum hadir menjadi baris Alfa di Spreadsheet" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 active:bg-rose-800 text-white font-bold rounded-xl text-[11px] transition shrink-0 flex items-center gap-1">
-          📥 Catat Alfa Sesi Ini
-        </button>
-      </div>
-
-      <!-- Bagian List Rekap & Filter -->
-      <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-700/60">
-          <div id="daily-filter-tabs" class="flex space-x-1">
-            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow">
-              Semua Santri
-            </button>
-            <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
-              Ada Alfa Hari Ini
-            </button>
-          </div>
-
-          <div id="periodic-header-title" class="hidden text-xs font-bold text-amber-400 truncate">
-            Rekap Rentang Tanggal
-          </div>
-          
-          <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2.5 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1 shrink-0">
-            📋 Salin WA
-          </button>
-        </div>
-
-        <div id="rekap-display-list" class="space-y-2 max-h-96 overflow-y-auto pr-1"></div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Modal Edit Status Laporan (Koreksi Status) -->
-  <div id="modal-edit-status" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
-      <div class="border-b border-slate-700/60 pb-2">
-        <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
-          <span>✏️</span> Koreksi Status Santri
-        </h3>
-        <p id="edit-modal-subtitle" class="text-[11px] text-slate-400 mt-0.5">Nama Santri</p>
-      </div>
-
-      <div class="space-y-2">
-        <label class="text-xs font-semibold text-slate-300">Pilih Sholat:</label>
-        <select id="edit-select-prayer" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
-          <option value="Subuh">Subuh</option>
-          <option value="Dzuhur">Dzuhur</option>
-          <option value="Ashar">Ashar</option>
-          <option value="Maghrib">Maghrib</option>
-          <option value="Isya">Isya</option>
-        </select>
-      </div>
-
-      <div class="space-y-2">
-        <label class="text-xs font-semibold text-slate-300">Pilih Status Baru:</label>
-        <select id="edit-select-status" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-emerald-400 focus:outline-none focus:border-emerald-500">
-          <option value="Tepat Waktu">✅ Tepat Waktu</option>
-          <option value="Masbuq">⚠️ Masbuq</option>
-          <option value="Izin Pulang">🏠 Izin Pulang</option>
-          <option value="Sakit">💊 Sakit</option>
-          <option value="Alfa">❌ Alfa</option>
-        </select>
-      </div>
-
-      <div class="pt-2 flex justify-end gap-2">
-        <button onclick="closeEditModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-medium">
-          Batal
-        </button>
-        <button onclick="submitStatusCorrection()" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow">
-          Simpan Koreksi
+        <button id="btn-print-action" onclick="handlePrint()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow-lg flex items-center gap-1.5 transition">
+          <span>🖨️</span> Cetak Sekarang (<span id="selected-count-badge">0</span>)
         </button>
       </div>
     </div>
+
+    <!-- Filter & Pencarian -->
+    <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 space-y-3">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
+        <input type="text" id="search-input" placeholder="🔍 Cari nama atau ID santri..." class="w-full sm:w-80 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-end text-xs">
+          <button onclick="toggleSelectAll(true)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-emerald-400 font-semibold rounded-lg">
+            Pilih Semua
+          </button>
+          <button onclick="toggleSelectAll(false)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg">
+            Batal Pilih
+          </button>
+        </div>
+      </div>
+
+      <!-- Daftar Pilihan Santri (Checkbox) -->
+      <div id="selection-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto pr-1"></div>
+    </div>
+
   </div>
 
-  <!-- Bottom Navigation -->
-  <nav class="fixed bottom-0 inset-x-0 bg-slate-900 border-t border-slate-800 z-40 max-w-md mx-auto">
-    <div class="grid grid-cols-3 py-2 text-center text-xs">
-      <button data-tab="tab-scan" class="nav-btn text-emerald-400 flex flex-col items-center space-y-1">
-        <span class="text-lg">📷</span>
-        <span>Scan</span>
-      </button>
-      <button data-tab="tab-jamaah" class="nav-btn text-slate-400 flex flex-col items-center space-y-1">
-        <span class="text-lg">👥</span>
-        <span>Jamaah</span>
-      </button>
-      <button data-tab="tab-rekap" class="nav-btn text-slate-400 flex flex-col items-center space-y-1">
-        <span class="text-lg">📊</span>
-        <span>Rekap</span>
-      </button>
-    </div>
-  </nav>
+  <!-- Area Lembar Cetak Kartu (A4 Layout) -->
+  <div id="print-sheet-container" class="max-w-[21cm] mx-auto bg-white text-slate-900 p-4 rounded-2xl shadow-2xl flex flex-wrap gap-3 justify-center items-center">
+    <p id="empty-state-text" class="text-xs text-slate-500 py-12 text-center no-print">
+      Centang satu atau beberapa santri di atas untuk melihat pratinjau kartu yang akan dicetak.
+    </p>
+  </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyszfOTv1q99BRO8skYi5ueiN16wmogFbTZEYjop4nIMGOGi_AtXfngea_ojoNjwBTU/exec";
-    let html5QrCode = null;
-    let isScanning = false;
-    
-    let currentPeriod = 'today'; // 'today' atau 'range'
-    let currentDailyFilter = 'all'; // 'all' atau 'alfa'
-    let currentCheckInStatus = 'Tepat Waktu';
-    let lastScanCooldown = {};
-    let activeEditingRecord = null;
-
+    // Ambil data santri dari cache localStorage aplikasi presensi
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
-    let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
+    let selectedIds = new Set();
 
-    const prayerList = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+    // Render daftar santri dengan kotak centang
+    function renderSelectionList() {
+      const listContainer = document.getElementById('selection-list');
+      const keyword = (document.getElementById('search-input').value || '').toLowerCase().trim();
+      listContainer.innerHTML = '';
 
-    function saveState() {
-      localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
-      localStorage.setItem('absensi_logs', JSON.stringify(logsData));
-    }
-
-    function parseDateNormalized(rawDate) {
-      if (!rawDate) return '';
-      const str = String(rawDate).trim();
-      const matchIso = str.match(/^(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-      if (matchIso) {
-        return `${matchIso[1]}-${String(matchIso[2]).padStart(2, '0')}-${String(matchIso[3]).padStart(2, '0')}`;
-      }
-      const months = {
-        Jan:'01', Feb:'02', Mar:'03', Apr:'04', May:'05', Jun:'06',
-        Jul:'07', Aug:'08', Sep:'09', Oct:'10', Nov:'11', Dec:'12'
-      };
-      const matchGmt = str.match(/([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
-      if (matchGmt && months[matchGmt[1]]) {
-        return `${matchGmt[3]}-${months[matchGmt[1]]}-${String(matchGmt[2]).padStart(2, '0')}`;
-      }
-      return str;
-    }
-
-    function getTodayString() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    }
-
-    function getSantriMasterName(id) {
-      const p = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(id).trim().toLowerCase());
-      return p ? p.name : '';
-    }
-
-    // Status Presensi (Scan)
-    window.setAttendanceStatus = function(status) {
-      currentCheckInStatus = status;
-
-      const btnTepat = document.getElementById('btn-st-tepat');
-      const btnMasbuq = document.getElementById('btn-st-masbuq');
-      const btnPulang = document.getElementById('btn-st-pulang');
-      const btnSakit = document.getElementById('btn-st-sakit');
-
-      [btnTepat, btnMasbuq, btnPulang, btnSakit].forEach(b => {
-        b.className = 'py-1.5 rounded-lg font-semibold text-slate-400 hover:text-white transition text-center';
-      });
-
-      if (status === 'Tepat Waktu') {
-        btnTepat.className = 'py-1.5 rounded-lg font-bold bg-emerald-600 text-white transition shadow text-center';
-      } else if (status === 'Masbuq') {
-        btnMasbuq.className = 'py-1.5 rounded-lg font-bold bg-amber-600 text-white transition shadow text-center';
-      } else if (status === 'Izin Pulang') {
-        btnPulang.className = 'py-1.5 rounded-lg font-bold bg-blue-600 text-white transition shadow text-center';
-      } else if (status === 'Sakit') {
-        btnSakit.className = 'py-1.5 rounded-lg font-bold bg-purple-600 text-white transition shadow text-center';
-      }
-    };
-
-    // Filter Harian (Semua vs Ada Alfa)
-    window.setDailyFilter = function(filter) {
-      currentDailyFilter = filter;
-      const btnAll = document.getElementById('filter-btn-all-daily');
-      const btnAlfa = document.getElementById('filter-btn-has-alfa');
-
-      if (filter === 'all') {
-        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow';
-        btnAlfa.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      } else {
-        btnAlfa.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white shadow';
-        btnAll.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      }
-      renderRekapView();
-    };
-
-    // Sinkronisasi Google Sheets
-    window.handleCloudMaster = function(res) {
-      if (res && res.status === 'success') {
-        if (Array.isArray(res.jamaah) && res.jamaah.length > 0) {
-          jamaahData = res.jamaah;
-        }
-        if (Array.isArray(res.logs)) {
-          logsData = res.logs.map(l => {
-            if (!l.name || String(l.name).trim() === '') {
-              l.name = getSantriMasterName(l.jamaahId) || ('Santri ' + l.jamaahId);
-            }
-            return l;
-          });
-        }
-        saveState();
-        renderJamaahList();
-        renderRekapView();
-      }
-    };
-
-    function syncFromCloud() {
-      if (!SCRIPT_URL) return;
-      const oldScript = document.getElementById('jsonp-sync-script');
-      if (oldScript) oldScript.remove();
-
-      const script = document.createElement('script');
-      script.id = 'jsonp-sync-script';
-      script.src = SCRIPT_URL + '?callback=handleCloudMaster&_t=' + Date.now();
-      document.body.appendChild(script);
-    }
-
-    syncFromCloud();
-    setInterval(syncFromCloud, 10000);
-
-    document.getElementById('btn-sync-manual').addEventListener('click', () => {
-      syncFromCloud();
-      showFeedback('success', 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
-    });
-
-    // Audio & Haptic
-    function playBeep(type = 'success') {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        
-        let freq = 880;
-        if (type === 'masbuq') freq = 550;
-        else if (type === 'pulang') freq = 650;
-        else if (type === 'sakit') freq = 450;
-        else if (type === 'error') freq = 320;
-
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        osc.start();
-        osc.stop(audioCtx.currentTime + (type === 'error' ? 0.25 : 0.15));
-      } catch (e) {}
-    }
-
-    function triggerHaptic(type = 'success') {
-      if ('vibrate' in navigator) {
-        if (type === 'success') navigator.vibrate([80, 50, 80]);
-        else if (type === 'masbuq') navigator.vibrate([120, 80, 120]);
-        else if (type === 'pulang' || type === 'sakit') navigator.vibrate([100, 50, 100]);
-        else navigator.vibrate(250);
-      }
-    }
-
-    function getEstimatedPrayer() {
-      const now = new Date();
-      const totalMinutes = now.getHours() * 60 + now.getMinutes();
-      if (totalMinutes >= 270 && totalMinutes < 390) return "Subuh";
-      if (totalMinutes >= 705 && totalMinutes < 870) return "Dzuhur";
-      if (totalMinutes >= 900 && totalMinutes < 1050) return "Ashar";
-      if (totalMinutes >= 1065 && totalMinutes < 1140) return "Maghrib";
-      if (totalMinutes >= 1140 || totalMinutes < 240) return "Isya";
-      return "Dzuhur";
-    }
-
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('live-clock').textContent = now.toLocaleTimeString('id-ID') + ' WIB';
-      const curPrayer = getEstimatedPrayer();
-      document.getElementById('current-prayer-badge').textContent = curPrayer;
-      if (!window.userChangedPrayer) {
-        document.getElementById('prayer-select').value = curPrayer;
-      }
-    }
-    setInterval(updateClock, 1000);
-    updateClock();
-
-    document.getElementById('prayer-select').addEventListener('change', () => {
-      window.userChangedPrayer = true;
-      if (currentPeriod === 'today') renderRekapView();
-    });
-
-    function processAttendance(jamaahId) {
-      const cleanId = String(jamaahId || '').trim();
-      if (!cleanId) return;
-
-      const nowTs = Date.now();
-      if (lastScanCooldown[cleanId] && (nowTs - lastScanCooldown[cleanId] < 5000)) {
-        return;
-      }
-      lastScanCooldown[cleanId] = nowTs;
-
-      const prayer = document.getElementById('prayer-select').value;
-      const todayStr = getTodayString();
-      const person = jamaahData.find(j => String(j.id).trim().toLowerCase() === cleanId.toLowerCase());
-      
-      if (!person) {
-        showFeedback('error', 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database.`);
-        playBeep('error');
-        triggerHaptic('error');
-        return;
-      }
-
-      const alreadyCheckedIn = logsData.some(log => 
-        String(log.jamaahId).trim().toLowerCase() === cleanId.toLowerCase() && 
-        parseDateNormalized(log.date) === todayStr && 
-        log.prayer === prayer
-      );
-
-      if (alreadyCheckedIn) {
-        showFeedback('error', 'Sudah Absen', `${person.name} sudah tercatat pada sholat ${prayer}.`);
-        playBeep('error');
-        triggerHaptic('error');
-        return;
-      }
-
-      const newRecord = {
-        id: 'LOG-' + Date.now(),
-        jamaahId: person.id,
-        name: person.name,
-        category: person.category,
-        prayer: prayer,
-        date: todayStr,
-        time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: currentCheckInStatus
-      };
-
-      logsData.unshift(newRecord);
-      saveState();
-      renderRekapView();
-
-      if (SCRIPT_URL) {
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(newRecord)
-        }).then(() => {
-          setTimeout(syncFromCloud, 1000);
-        }).catch(err => console.error('Gagal kirim:', err));
-      }
-      
-      let feedbackType = 'success';
-      if (currentCheckInStatus === 'Masbuq') feedbackType = 'masbuq';
-      else if (currentCheckInStatus === 'Izin Pulang') feedbackType = 'pulang';
-      else if (currentCheckInStatus === 'Sakit') feedbackType = 'sakit';
-
-      showFeedback(feedbackType, `${currentCheckInStatus} Tercatat`, `${person.name} (${prayer})`);
-      playBeep(feedbackType);
-      triggerHaptic(feedbackType);
-    }
-
-    function showFeedback(type, title, msg) {
-      const box = document.getElementById('scan-feedback');
-      const icon = document.getElementById('feedback-icon');
-      const titleEl = document.getElementById('feedback-title');
-      const msgEl = document.getElementById('feedback-msg');
-
-      box.classList.remove('hidden', 'border-emerald-500', 'border-amber-500', 'border-blue-500', 'border-purple-500', 'border-rose-500', 'bg-emerald-950/40', 'bg-amber-950/40', 'bg-blue-950/40', 'bg-purple-950/40', 'bg-rose-950/40');
-      
-      if (type === 'success') {
-        box.classList.add('border-emerald-500', 'bg-emerald-950/40');
-        icon.textContent = '✅';
-        titleEl.className = 'text-xs font-bold text-emerald-400';
-      } else if (type === 'masbuq') {
-        box.classList.add('border-amber-500', 'bg-amber-950/40');
-        icon.textContent = '⚠️';
-        titleEl.className = 'text-xs font-bold text-amber-400';
-      } else if (type === 'pulang') {
-        box.classList.add('border-blue-500', 'bg-blue-950/40');
-        icon.textContent = '🏠';
-        titleEl.className = 'text-xs font-bold text-blue-400';
-      } else if (type === 'sakit') {
-        box.classList.add('border-purple-500', 'bg-purple-950/40');
-        icon.textContent = '💊';
-        titleEl.className = 'text-xs font-bold text-purple-400';
-      } else {
-        box.classList.add('border-rose-500', 'bg-rose-950/40');
-        icon.textContent = '❌';
-        titleEl.className = 'text-xs font-bold text-rose-400';
-      }
-
-      titleEl.textContent = title;
-      msgEl.textContent = msg;
-
-      clearTimeout(window.feedbackTimer);
-      window.feedbackTimer = setTimeout(() => box.classList.add('hidden'), 4000);
-    }
-
-    // Kontrol Kamera (Terkunci Tengah)
-    const btnStart = document.getElementById('btn-start-camera');
-    const btnStop = document.getElementById('btn-stop-camera');
-    const cameraPlaceholder = document.getElementById('camera-placeholder');
-
-    btnStart.addEventListener('click', async () => {
-      try {
-        html5QrCode = new Html5Qrcode("reader");
-        cameraPlaceholder.classList.add('hidden');
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
-          (decodedText) => {
-            html5QrCode.pause(true);
-            processAttendance(decodedText);
-            setTimeout(() => {
-              if (html5QrCode && isScanning) html5QrCode.resume();
-            }, 2500);
-          },
-          () => {}
-        );
-        isScanning = true;
-        btnStart.disabled = true;
-        btnStart.classList.add('opacity-50');
-        btnStop.disabled = false;
-        btnStop.classList.remove('opacity-50');
-      } catch (err) {
-        alert("Gagal membuka kamera. Pastikan izin kamera telah diberikan.");
-        cameraPlaceholder.classList.remove('hidden');
-      }
-    });
-
-    btnStop.addEventListener('click', async () => {
-      if (html5QrCode && isScanning) {
-        await html5QrCode.stop();
-        html5QrCode.clear();
-        isScanning = false;
-        btnStart.disabled = false;
-        btnStart.classList.remove('opacity-50');
-        btnStop.disabled = true;
-        btnStop.classList.add('opacity-50');
-        cameraPlaceholder.classList.remove('hidden');
-      }
-    });
-
-    document.getElementById('btn-manual-submit').addEventListener('click', () => {
-      const input = document.getElementById('manual-id-input');
-      processAttendance(input.value);
-      input.value = '';
-    });
-
-    // Navigasi Tab
-    const navBtns = document.querySelectorAll('.nav-btn');
-    const tabs = {
-      'tab-scan': document.getElementById('tab-scan'),
-      'tab-jamaah': document.getElementById('tab-jamaah'),
-      'tab-rekap': document.getElementById('tab-rekap')
-    };
-
-    navBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.tab;
-        Object.keys(tabs).forEach(k => tabs[k].classList.add('hidden'));
-        tabs[target].classList.remove('hidden');
-
-        navBtns.forEach(b => {
-          b.classList.remove('text-emerald-400');
-          b.classList.add('text-slate-400');
-        });
-        btn.classList.add('text-emerald-400');
-        btn.classList.remove('text-slate-400');
-
-        if (target === 'tab-jamaah') renderJamaahList();
-        if (target === 'tab-rekap') {
-          syncFromCloud();
-          renderRekapView();
-        }
-      });
-    });
-
-    // Cetak Kartu Digital
-    function showQrCard(id, name, category) {
-      const box = document.getElementById('qr-preview-box');
-      const container = document.getElementById('qrcode-container');
-      container.innerHTML = '';
-      
-      new QRCode(container, {
-        text: String(id),
-        width: 160,
-        height: 160,
-        colorDark: "#047857",
-        colorLight: "#ffffff"
-      });
-      
-      document.getElementById('card-preview-name').textContent = name;
-      document.getElementById('card-preview-role').textContent = category;
-      document.getElementById('card-preview-id').textContent = 'ID: ' + id;
-      box.classList.remove('hidden');
-      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    document.getElementById('btn-close-preview').addEventListener('click', () => {
-      document.getElementById('qr-preview-box').classList.add('hidden');
-    });
-
-    function printCurrentPreviewCard() {
-      const name = document.getElementById('card-preview-name').textContent;
-      const role = document.getElementById('card-preview-role').textContent;
-      const idStr = document.getElementById('card-preview-id').textContent.replace('ID: ', '').trim();
-      const qrCanvas = document.querySelector('#qrcode-container canvas');
-      const qrImgSrc = qrCanvas ? qrCanvas.toDataURL() : '';
-
-      const win = window.open('', '_blank');
-      win.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Cetak Kartu - ${name}</title>
-          <style>
-            @page { size: A4; margin: 1cm; }
-            body { font-family: sans-serif; display: flex; justify-content: flex-start; padding: 20px; margin: 0; }
-            .card {
-              width: 8.5cm;
-              height: 5.4cm;
-              border: 1px dashed #64748b;
-              border-radius: 12px;
-              padding: 12px;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              box-sizing: border-box;
-            }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
-            .header-title { font-weight: bold; font-size: 11px; color: #065f46; }
-            .body-content { display: flex; align-items: center; gap: 12px; margin: auto 0; }
-            .body-content img { width: 80px; height: 80px; }
-            .info-name { font-weight: bold; font-size: 13px; margin: 0; }
-            .info-id { font-size: 12px; color: #047857; font-weight: bold; font-family: monospace; margin: 4px 0; }
-            .info-desc { font-size: 8px; color: #64748b; margin: 0; }
-            .footer { border-top: 1px solid #f1f5f9; padding-top: 4px; font-size: 8px; color: #94a3b8; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="header">
-              <span class="header-title">🕌 KARTU PRESENSI SHOLAT</span>
-              <span style="font-size: 9px; font-weight: bold; background: #ecfdf5; color: #065f46; padding: 2px 6px; border-radius: 4px;">${role}</span>
-            </div>
-            <div class="body-content">
-              <img src="${qrImgSrc}">
-              <div>
-                <p class="info-name">${name}</p>
-                <p class="info-id">${idStr}</p>
-                <p class="info-desc">Tunjukkan barcode ini kepada petugas scanner saat memasuki mushola.</p>
-              </div>
-            </div>
-            <div class="footer">
-              <span>Pondok Pesantren Tahfidzul Qur'an Al Husna Lestari</span>
-              <span>${idStr}</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); window.close(); };
-          <\/script>
-        </body>
-        </html>
-      `);
-      win.document.close();
-    }
-
-    // Render Tab Jamaah (Dengan Pencarian Instan)
-    function renderJamaahList() {
-      const container = document.getElementById('jamaah-list');
-      const keyword = (document.getElementById('jamaah-search-input')?.value || '').toLowerCase().trim();
-      
-      let list = jamaahData;
+      let filtered = jamaahData;
       if (keyword) {
-        list = jamaahData.filter(j => 
+        filtered = jamaahData.filter(j => 
           j.name.toLowerCase().includes(keyword) || String(j.id).toLowerCase().includes(keyword)
         );
       }
 
-      document.getElementById('jamaah-count').textContent = `${list.length}/${jamaahData.length} Orang`;
-      container.innerHTML = '';
-
-      if (list.length === 0) {
-        container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Tidak ada santri yang sesuai.</p>';
+      if (filtered.length === 0) {
+        listContainer.innerHTML = '<p class="text-xs text-slate-400 py-4 col-span-full text-center">Tidak ada santri yang cocok.</p>';
         return;
       }
 
-      list.forEach(j => {
-        const div = document.createElement('div');
-        div.className = 'flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border border-slate-700/60 text-xs';
+      filtered.forEach(j => {
+        const isChecked = selectedIds.has(String(j.id));
+        const div = document.createElement('label');
+        div.className = `flex items-center gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition select-none ${isChecked ? 'bg-emerald-950/60 border-emerald-600 text-emerald-200' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'}`;
         div.innerHTML = `
-          <div>
-            <p class="font-bold text-slate-200">${j.name}</p>
-            <p class="text-slate-400 font-mono text-[11px]">${j.id} • ${j.category}</p>
+          <input type="checkbox" value="${j.id}" ${isChecked ? 'checked' : ''} onchange="toggleSelect('${j.id}')" class="rounded text-emerald-600 focus:ring-emerald-500 bg-slate-800 border-slate-700">
+          <div class="min-w-0 flex-1">
+            <p class="font-bold truncate text-[11px] leading-tight">${j.name}</p>
+            <p class="text-[10px] text-slate-400 font-mono">${j.id} • ${j.category}</p>
           </div>
-          <button onclick="showQrCard('${j.id}', '${j.name}', '${j.category}')" class="px-2.5 py-1 bg-emerald-950 text-emerald-400 border border-emerald-700 hover:bg-emerald-900 rounded-lg text-[11px] font-semibold transition">
-            QR
-          </button>
         `;
-        container.appendChild(div);
+        listContainer.appendChild(div);
       });
+
+      document.getElementById('selected-count-badge').textContent = selectedIds.size;
     }
 
-    document.getElementById('jamaah-search-input').addEventListener('input', renderJamaahList);
-
-    // --- REKAP EVALUASI (HARI INI 5 WAKTU & RENTANG TANGGAL) ---
-    window.switchPeriod = function(period) {
-      currentPeriod = period;
-
-      const btnToday = document.getElementById('btn-p-today');
-      const btnRange = document.getElementById('btn-p-range');
-      const rangeContainer = document.getElementById('range-picker-container');
-
-      [btnToday, btnRange].forEach(b => {
-        b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
-      });
-
-      if (period === 'today') {
-        btnToday.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
-        rangeContainer.classList.add('hidden');
-        document.getElementById('daily-filter-tabs').classList.remove('hidden');
-        document.getElementById('periodic-header-title').classList.add('hidden');
-        document.getElementById('btn-save-alfa-sheet').classList.remove('hidden');
-        document.getElementById('label-stat-1').textContent = 'Total Hadir';
-        document.getElementById('label-stat-2').textContent = 'Total Alfa';
-        document.getElementById('label-stat-3').textContent = 'Target/Anak';
+    // Toggle centang satuan
+    window.toggleSelect = function(id) {
+      id = String(id);
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
       } else {
-        btnRange.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
-        rangeContainer.classList.remove('hidden');
-        document.getElementById('daily-filter-tabs').classList.add('hidden');
-        document.getElementById('periodic-header-title').classList.remove('hidden');
-        document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
-        document.getElementById('label-stat-1').textContent = 'Total Hadir';
-        document.getElementById('label-stat-2').textContent = 'Total Alfa';
-        document.getElementById('label-stat-3').textContent = 'Target/Anak';
-
-        // Inisialisasi default rentang 7 hari terakhir jika belum diisi
-        const todayStr = getTodayString();
-        if (!document.getElementById('range-end-date').value) {
-          document.getElementById('range-end-date').value = todayStr;
-        }
-        if (!document.getElementById('range-start-date').value) {
-          const past = new Date();
-          past.setDate(past.getDate() - 6);
-          document.getElementById('range-start-date').value = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
-        }
+        selectedIds.add(id);
       }
-
-      renderRekapView();
+      renderSelectionList();
+      renderPrintCards();
     };
 
-    document.getElementById('rekap-search-input').addEventListener('input', () => {
-      renderRekapView();
-    });
-
-    // Helper: Badge Status Kecil untuk Matriks 5 Waktu
-    function getPrayerBadge(prayerName, status) {
-      if (!status || status === 'Belum Ada' || status === 'Alfa') {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-800">${prayerName}: ❌</span>`;
+    // Toggle pilih semua
+    window.toggleSelectAll = function(select) {
+      if (select) {
+        jamaahData.forEach(j => selectedIds.add(String(j.id)));
+      } else {
+        selectedIds.clear();
       }
-      if (status === 'Masbuq') {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950 text-amber-300 border border-amber-700">${prayerName}: ⚠️</span>`;
-      }
-      if (status === 'Izin Pulang') {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-950 text-blue-300 border border-blue-700">${prayerName}: 🏠</span>`;
-      }
-      if (status === 'Sakit') {
-        return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-950 text-purple-300 border border-purple-700">${prayerName}: 💊</span>`;
-      }
-      return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">${prayerName}: ✅</span>`;
-    }
-
-    // Modal Koreksi
-    window.openEditModal = function(jamaahId, name, prayer, date, currentStatus) {
-      const validName = (name && String(name).trim() !== '') ? name : (getSantriMasterName(jamaahId) || ('Santri ' + jamaahId));
-      activeEditingRecord = { jamaahId, name: validName, prayer, date };
-      
-      document.getElementById('edit-modal-subtitle').textContent = `${validName} (${jamaahId}) • ${date}`;
-      document.getElementById('edit-select-prayer').value = prayer || document.getElementById('prayer-select').value;
-      document.getElementById('edit-select-status').value = currentStatus || 'Tepat Waktu';
-      document.getElementById('modal-edit-status').classList.remove('hidden');
+      renderSelectionList();
+      renderPrintCards();
     };
 
-    window.closeEditModal = function() {
-      activeEditingRecord = null;
-      document.getElementById('modal-edit-status').classList.add('hidden');
-    };
+    // Event pencarian
+    document.getElementById('search-input').addEventListener('input', renderSelectionList);
 
-    window.submitStatusCorrection = function() {
-      if (!activeEditingRecord) return;
-      const newStatus = document.getElementById('edit-select-status').value;
-      const selectedPrayer = document.getElementById('edit-select-prayer').value;
-      const { jamaahId, date, name } = activeEditingRecord;
-
-      let found = false;
-      logsData.forEach(l => {
-        const idMatch = String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase();
-        if (idMatch && l.prayer === selectedPrayer && parseDateNormalized(l.date) === date) {
-          l.status = newStatus;
-          l.name = name;
-          found = true;
-        }
-      });
-
-      if (!found) {
-        logsData.unshift({
-          id: 'LOG-' + Date.now(),
-          jamaahId: String(jamaahId).trim(),
-          name: name,
-          category: 'Santri',
-          prayer: selectedPrayer,
-          date: date,
-          time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          status: newStatus
-        });
-      }
-
-      saveState();
-      renderRekapView();
-      closeEditModal();
-      showFeedback('success', 'Menyimpan Koreksi...', `${name} (${selectedPrayer}) diubah ke ${newStatus}`);
-
-      if (SCRIPT_URL) {
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'update_status',
-            jamaahId: String(jamaahId).trim(),
-            name: name,
-            prayer: selectedPrayer,
-            date: date,
-            newStatus: newStatus
-          })
-        }).then(() => {
-          setTimeout(() => {
-            syncFromCloud();
-            showFeedback('success', 'Tersimpan Permanen', `Status ${name} berhasil disimpan di Spreadsheet.`);
-          }, 2000);
-        }).catch(err => {
-          console.error('Gagal koreksi status:', err);
-          showFeedback('error', 'Gagal Terhubung', 'Periksa koneksi internet ke Google Sheets.');
-        });
-      }
-    };
-
-    // Simpan Alfa Massal Sesi Sholat Aktif ke Spreadsheet
-    window.saveAlfaToSpreadsheet = function() {
-      const todayStr = getTodayString();
-      const prayer = document.getElementById('prayer-select').value;
-
-      const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr && l.prayer === prayer);
-      const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
-      const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
-
-      if (absentList.length === 0) {
-        return alert(`Semua santri sudah memiliki catatan pada sholat ${prayer} hari ini.`);
-      }
-
-      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} hari ini ke Google Sheets sebagai 'Alfa'?`;
-      if (!confirm(confirmMsg)) return;
-
-      const recordsToSend = absentList.map(j => ({
-        jamaahId: j.id,
-        name: j.name,
-        category: j.category,
-        prayer: prayer,
-        date: todayStr,
-        time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-      }));
-
-      recordsToSend.forEach(r => {
-        logsData.unshift({
-          id: 'LOG-' + Date.now(),
-          jamaahId: r.jamaahId,
-          name: r.name,
-          category: r.category,
-          prayer: r.prayer,
-          date: r.date,
-          time: r.time,
-          status: 'Alfa'
-        });
-      });
-
-      saveState();
-      renderRekapView();
-
-      if (SCRIPT_URL) {
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: 'bulk_alfa',
-            records: recordsToSend
-          })
-        }).then(() => {
-          showFeedback('error', 'Alfa Tersimpan', `${recordsToSend.length} santri berhasil dicatat Alfa ke Spreadsheet.`);
-          setTimeout(syncFromCloud, 2000);
-        }).catch(() => alert('Gagal mengirim data alfa ke spreadsheet.'));
-      }
-    };
-
-    // Render Rekap Utama
-    function renderRekapView() {
-      const container = document.getElementById('rekap-display-list');
+    // Render Kartu yang akan di-print
+    function renderPrintCards() {
+      const container = document.getElementById('print-sheet-container');
       container.innerHTML = '';
-      const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
-      const todayStr = getTodayString();
 
-      // ==========================================
-      // MODE 1: HARI INI (MATRIKS 5 WAKTU LENGKAP)
-      // ==========================================
-      if (currentPeriod === 'today') {
-        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
-
-        let totalHadirSemua = 0;
-        let totalAlfaSemua = 0;
-
-        let dailyAnalysis = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-
-          let prayerStatus = { Subuh: '', Dzuhur: '', Ashar: '', Maghrib: '', Isya: '' };
-          let hadirHariIni = 0;
-          let alfaHariIni = 0;
-
-          prayerList.forEach(p => {
-            const pLog = sLogs.find(l => l.prayer === p);
-            if (pLog) {
-              prayerStatus[p] = pLog.status;
-              if (pLog.status === 'Tepat Waktu' || pLog.status === 'Masbuq') {
-                hadirHariIni++;
-              } else if (pLog.status === 'Alfa') {
-                alfaHariIni++;
-              }
-            } else {
-              prayerStatus[p] = 'Belum Ada';
-              alfaHariIni++;
-            }
-          });
-
-          totalHadirSemua += hadirHariIni;
-          totalAlfaSemua += alfaHariIni;
-
-          return {
-            id: santri.id,
-            name: santri.name,
-            category: santri.category,
-            prayerStatus: prayerStatus,
-            hadirCount: hadirHariIni,
-            alfaCount: alfaHariIni,
-            isComplete: hadirHariIni === 5
-          };
-        });
-
-        // Filter pencarian
-        if (searchKeyword) {
-          dailyAnalysis = dailyAnalysis.filter(j => 
-            j.name.toLowerCase().includes(searchKeyword) || String(j.id).toLowerCase().includes(searchKeyword)
-          );
-        }
-
-        // Filter: Semua Santri vs Yang Ada Alfa Hari Ini
-        if (currentDailyFilter === 'alfa') {
-          dailyAnalysis = dailyAnalysis.filter(j => j.alfaCount > 0);
-        }
-
-        // Urutkan yang alfa paling banyak di atas
-        dailyAnalysis.sort((a, b) => b.alfaCount - a.alfaCount);
-
-        document.getElementById('today-count').textContent = totalHadirSemua;
-        document.getElementById('absent-count').textContent = totalAlfaSemua;
-        document.getElementById('total-registered-count').textContent = '5 Sesi';
-
-        if (dailyAnalysis.length === 0) {
-          container.innerHTML = `<p class="text-xs text-emerald-400 py-6 text-center font-bold">🎉 Tidak ada santri yang sesuai kriteria.</p>`;
-          return;
-        }
-
-        dailyAnalysis.forEach((j, idx) => {
-          const hasAlfa = j.alfaCount > 0;
-          container.innerHTML += `
-            <div class="p-2.5 bg-slate-900 rounded-xl border ${hasAlfa ? 'border-rose-900/40' : 'border-slate-700/60'} text-xs space-y-1.5">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="font-bold ${hasAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${j.name}</p>
-                  <p class="text-slate-400 font-mono text-[10px]">${j.id} • Hadir: ${j.hadirCount}/5 • Alfa: ${j.alfaCount}x</p>
-                </div>
-                <button onclick="openEditModal('${j.id}', '${j.name}', '', '${todayStr}', '')" title="Koreksi salah satu sholat santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
-                  ✏️ Koreksi
-                </button>
-              </div>
-              <!-- Matriks 5 Waktu Sholat -->
-              <div class="flex flex-wrap gap-1 pt-0.5 border-t border-slate-800/80">
-                ${prayerList.map(p => getPrayerBadge(p, j.prayerStatus[p])).join('')}
-              </div>
-            </div>
-          `;
-        });
-
-      // ==========================================
-      // MODE 2: RENTANG TANGGAL BEBAS
-      // ==========================================
-      } else {
-        const startDate = document.getElementById('range-start-date').value;
-        const endDate = document.getElementById('range-end-date').value;
-
-        if (!startDate || !endDate) {
-          container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Silakan pilih tanggal mulai dan tanggal selesai di atas.</p>';
-          return;
-        }
-
-        if (startDate > endDate) {
-          container.innerHTML = '<p class="text-xs text-rose-400 py-4 text-center">Tanggal mulai tidak boleh lebih besar dari tanggal selesai.</p>';
-          return;
-        }
-
-        // Hitung selisih hari inklusif
-        const d1 = new Date(startDate);
-        const d2 = new Date(endDate);
-        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-        const targetPerSantri = diffDays * 5;
-
-        document.getElementById('periodic-header-title').textContent = `Rekap ${startDate} s/d ${endDate} (${diffDays} Hari - Target ${targetPerSantri} Sesi)`;
-
-        // Ambil log yang berada di dalam rentang
-        const validLogs = logsData.filter(l => {
-          const d = parseDateNormalized(l.date);
-          return d >= startDate && d <= endDate;
-        });
-
-        let ranking = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-
-          const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-          const totalTercatat = uniqueSessions.size;
-
-          const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
-          const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
-          const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
-          const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
-          const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
-
-          return {
-            id: santri.id,
-            name: santri.name,
-            category: santri.category,
-            hadir: hadirMurniCount,
-            masbuq: masbuqCount,
-            pulang: pulangCount,
-            sakit: sakitCount,
-            alfa: alfaCount,
-            target: targetPerSantri
-          };
-        });
-
-        if (searchKeyword) {
-          ranking = ranking.filter(r => 
-            r.name.toLowerCase().includes(searchKeyword) || String(r.id).toLowerCase().includes(searchKeyword)
-          );
-        }
-
-        ranking.sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
-
-        const totalHadirAll = ranking.reduce((acc, cur) => acc + cur.hadir, 0);
-        const totalAlfaAll = ranking.reduce((acc, cur) => acc + cur.alfa, 0);
-
-        document.getElementById('today-count').textContent = totalHadirAll;
-        document.getElementById('absent-count').textContent = totalAlfaAll;
-        document.getElementById('total-registered-count').textContent = `${targetPerSantri} Sesi`;
-
-        if (ranking.length === 0) {
-          container.innerHTML = '<p class="text-xs text-slate-500 py-4 text-center">Tidak ada santri yang sesuai.</p>';
-          return;
-        }
-
-        ranking.forEach((r, idx) => {
-          const isHighAlfa = r.alfa > (targetPerSantri * 0.2);
-          let noteArr = [];
-          if (r.masbuq > 0) noteArr.push(`<span class="text-amber-400 font-bold">${r.masbuq}x Masbuq</span>`);
-          if (r.pulang > 0) noteArr.push(`<span class="text-blue-400 font-bold">${r.pulang}x Pulang</span>`);
-          if (r.sakit > 0) noteArr.push(`<span class="text-purple-400 font-bold">${r.sakit}x Sakit</span>`);
-          const noteStr = noteArr.length > 0 ? ` • ${noteArr.join(', ')}` : '';
-
-          container.innerHTML += `
-            <div class="flex items-center justify-between p-2.5 bg-slate-900 rounded-xl border ${isHighAlfa ? 'border-rose-900/60' : 'border-slate-700/60'} text-xs">
-              <div>
-                <p class="font-bold ${isHighAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${r.name}</p>
-                <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target}${noteStr}</p>
-              </div>
-              <div class="text-right">
-                <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${r.alfa > 0 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
-                  ${r.alfa}x Alfa
-                </span>
-              </div>
-            </div>
-          `;
-        });
+      if (selectedIds.size === 0) {
+        container.innerHTML = `
+          <p id="empty-state-text" class="text-xs text-slate-400 py-12 text-center no-print">
+            Centang satu atau beberapa santri di atas untuk melihat pratinjau kartu yang akan dicetak.
+          </p>
+        `;
+        return;
       }
+
+      const selectedSantri = jamaahData.filter(j => selectedIds.has(String(j.id)));
+
+      selectedSantri.forEach(santri => {
+        const card = document.createElement('div');
+        card.className = 'id-card-size card-item border-2 border-dashed border-slate-400 rounded-xl p-2.5 flex flex-col justify-between bg-white text-slate-900 shadow-sm relative';
+        
+        const qrId = 'qrcode-box-' + santri.id;
+        
+        card.innerHTML = `
+          <!-- Header Kartu -->
+          <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm">🕌</span>
+              <span class="text-[9px] font-black tracking-wider text-emerald-800 uppercase">KARTU PRESENSI SHOLAT</span>
+            </div>
+            <span class="text-[8px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">${santri.category}</span>
+          </div>
+
+          <!-- Body: QR & Biodata -->
+          <div class="flex items-center gap-2.5 my-auto">
+            <div id="${qrId}" class="p-1 bg-white border border-slate-200 rounded-lg shrink-0"></div>
+            <div class="min-w-0 flex-1 space-y-0.5">
+              <h3 class="text-xs font-black leading-tight text-slate-900 truncate">${santri.name}</h3>
+              <p class="text-[11px] font-mono font-bold text-emerald-700 leading-none">ID: ${santri.id}</p>
+              <p class="text-[7.5px] text-slate-500 leading-snug pt-1">Pindai barcode ini pada kamera petugas presensi sebelum sholat.</p>
+            </div>
+          </div>
+
+          <!-- Footer Kartu -->
+          <div class="border-t border-slate-200 pt-1 flex items-center justify-between text-[7px] text-slate-400">
+            <span class="font-semibold text-emerald-900">PPTQ Al Husna Lestari</span>
+            <span class="font-mono">${santri.id}</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // Generate QR code dengan ukuran tajam
+        setTimeout(() => {
+          new QRCode(document.getElementById(qrId), {
+            text: String(santri.id),
+            width: 70,
+            height: 70,
+            colorDark: "#047857",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }, 10);
+      });
     }
 
-    // Salin Laporan WhatsApp (Adaptif Harian vs Rentang)
-    document.getElementById('btn-copy-absent').addEventListener('click', () => {
-      const todayStr = getTodayString();
-      let text = "";
-
-      if (currentPeriod === 'today') {
-        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
-
-        text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n\n`;
-
-        let adaCatatan = false;
-        jamaahData.forEach((santri, idx) => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-
-          let bolos = [];
-          prayerList.forEach(p => {
-            const pLog = sLogs.find(l => l.prayer === p);
-            if (!pLog || pLog.status === 'Alfa') {
-              bolos.push(p);
-            }
-          });
-
-          if (bolos.length > 0) {
-            adaCatatan = true;
-            text += `${santri.name} (${santri.id}) ➔ *Tidak Sholat: ${bolos.join(', ')}*\n`;
-          }
-        });
-
-        if (!adaCatatan) {
-          text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu hari ini!`;
-        }
-
-      } else {
-        const startDate = document.getElementById('range-start-date').value;
-        const endDate = document.getElementById('range-end-date').value;
-
-        if (!startDate || !endDate) return alert('Pilih rentang tanggal terlebih dahulu.');
-        const d1 = new Date(startDate);
-        const d2 = new Date(endDate);
-        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-        const targetPerSantri = diffDays * 5;
-
-        const validLogs = logsData.filter(l => {
-          const d = parseDateNormalized(l.date);
-          return d >= startDate && d <= endDate;
-        });
-
-        const ranking = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-          const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-          const totalTercatat = uniqueSessions.size;
-
-          const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
-          const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
-          const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
-          const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
-          const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
-
-          return {
-            name: santri.name,
-            id: santri.id,
-            hadir: hadirMurniCount,
-            masbuq: masbuqCount,
-            pulang: pulangCount,
-            sakit: sakitCount,
-            alfa: alfaCount,
-            target: targetPerSantri
-          };
-        }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
-
-        const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
-        if (listCatatan.length === 0) return alert('Semua santri disiplin di rentang tanggal ini.');
-
-        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${startDate} s/d ${endDate} (${diffDays} Hari)\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
-        listCatatan.forEach((r, i) => {
-          let ket = [];
-          if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
-          if (r.masbuq > 0) ket.push(`${r.masbuq}x Masbuq`);
-          if (r.sakit > 0) ket.push(`${r.sakit}x Sakit`);
-          if (r.pulang > 0) ket.push(`${r.pulang}x Pulang`);
-
-          text += `${i + 1}. ${r.name} (${r.id}) ➔ ${ket.join(', ')} (Hadir: ${r.hadir}/${r.target})\n`;
-        });
+    // Aksi Cetak
+    window.handlePrint = function() {
+      if (selectedIds.size === 0) {
+        return alert('Silakan centang minimal satu santri yang ingin dicetak kartunya.');
       }
+      window.print();
+    };
 
-      navigator.clipboard.writeText(text).then(() => {
-        showFeedback('success', 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
-      }).catch(() => alert('Gagal menyalin.'));
-    });
-
-    renderJamaahList();
-    renderRekapView();
+    // Inisialisasi awal
+    renderSelectionList();
+    renderPrintCards();
   </script>
 </body>
 </html>
