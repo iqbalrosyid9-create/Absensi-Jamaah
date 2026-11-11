@@ -244,6 +244,10 @@
             <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
               Ada Alfa
             </button>
+            <!-- TAMBAHKAN TOMBOL SESI INI -->
+            <button id="filter-btn-current-prayer" onclick="setDailyFilter('current_prayer')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-amber-300 hover:text-white flex items-center gap-1">
+             ⏳ <span id="label-active-prayer-filter">Sesi Sekarang</span>
+            </button>
           </div>
 
           <!-- Tengah: Tombol Geser Tanggal (Kemarin ◀ Tanggal ▶ Besok) -->
@@ -447,19 +451,26 @@
       }
     };
 
-    // Filter Harian (Semua vs Ada Alfa)
+    // Filter Harian (Semua vs Ada Alfa vs Sesi Sekarang)
     window.setDailyFilter = function(filter) {
       currentDailyFilter = filter;
       const btnAll = document.getElementById('filter-btn-all-daily');
       const btnAlfa = document.getElementById('filter-btn-has-alfa');
+      const btnCurrent = document.getElementById('filter-btn-current-prayer');
 
-      if (filter === 'all') {
-        btnAll.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow';
-        btnAlfa.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      } else {
-        btnAlfa.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white shadow';
-        btnAll.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+      [btnAll, btnAlfa, btnCurrent].forEach(b => {
+        if (b) b.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+      });
+
+      
+      else if (filter === 'current_prayer') {
+        if (btnCurrent) btnCurrent.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white shadow';
+      } else if (filter === 'alfa') {
+        if (btnAlfa) btnAlfa.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white shadow';
+      } if (filter === 'all') {
+        if (btnAll) btnAll.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow';
       }
+
       renderRekapView();
     };
 
