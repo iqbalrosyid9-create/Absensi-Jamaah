@@ -139,7 +139,7 @@
       </div>
     </section>
 
-    <!-- Tab 2: Jamaah (Dengan Pencarian) -->
+    <!-- Tab 2: Jamaah (Dengan Pencarian & Cetak Multiple) -->
     <section id="tab-jamaah" class="hidden space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
@@ -155,7 +155,6 @@
           </div>
         </div>
 
-        <!-- Kolom Pencarian Jamaah -->
         <div>
           <input type="text" id="jamaah-search-input" placeholder="🔍 Cari nama atau ID santri..." class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500">
         </div>
@@ -168,9 +167,6 @@
         <p id="card-preview-id" class="text-xs font-mono font-bold text-slate-300">ID: -</p>
         
         <div class="pt-2 flex justify-center items-center gap-2">
-          <button onclick="printCurrentPreviewCard()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-bold text-white shadow flex items-center gap-1">
-            🖨️ Cetak Kartu Ini
-          </button>
           <button id="btn-close-preview" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-xl text-xs text-slate-300">
             Tutup
           </button>
@@ -182,20 +178,20 @@
       </div>
     </section>
 
-    <!-- Tab 3: Rekap, Edit Status & Simpan Alfa -->
+    <!-- Tab 3: Rekap, Edit Status & Laporan PDF -->
     <section id="tab-rekap" class="hidden space-y-4">
       
-      <!-- Pemilih Mode Periode (Hanya Hari Ini & Rentang Tanggal) -->
+      <!-- Pemilih Mode Periode -->
       <div class="bg-slate-800 p-1.5 rounded-2xl border border-slate-700 flex gap-1.5 text-xs">
         <button id="btn-p-today" onclick="switchPeriod('today')" class="flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow">
-          Hari Ini (5 Waktu)
+          Rekap Harian
         </button>
         <button id="btn-p-range" onclick="switchPeriod('range')" class="flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition">
           Pilih Rentang Tanggal
         </button>
       </div>
 
-      <!-- Pemilih Tanggal Rentang (Khusus Mode Rentang) -->
+      <!-- Pemilih Tanggal Rentang -->
       <div id="range-picker-container" class="hidden bg-slate-800 p-3 rounded-2xl border border-slate-700 space-y-2 text-xs">
         <div class="grid grid-cols-2 gap-2">
           <div>
@@ -236,15 +232,30 @@
         </button>
       </div>
 
-      <!-- Bagian List Rekap & Filter -->
+      <!-- Baris Filter & Navigasi Tanggal Cepat (Kemarin ◀ Tanggal ▶ Besok) -->
       <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
-        <div class="flex items-center justify-between pb-2 border-b border-slate-700/60">
-          <div id="daily-filter-tabs" class="flex space-x-1">
-            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow">
-              Semua Santri
+        <div class="flex items-center justify-between pb-2 border-b border-slate-700/60 gap-1.5">
+          
+          <!-- Kiri: Filter Kategori Santri -->
+          <div id="daily-filter-tabs" class="flex space-x-1 shrink-0">
+            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow">
+              Semua
             </button>
-            <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
-              Ada Alfa Hari Ini
+            <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
+              Ada Alfa
+            </button>
+          </div>
+
+          <!-- Tengah: Tombol Geser Tanggal (Kemarin ◀ Tanggal ▶ Besok) -->
+          <div id="date-stepper-box" class="flex items-center justify-center gap-1 bg-slate-900/90 px-2 py-0.5 rounded-xl border border-slate-700">
+            <button onclick="changeViewDate(-1)" title="Hari Sebelumnya" class="p-1 hover:text-emerald-400 text-slate-300 font-bold text-xs transition">
+              ◀
+            </button>
+            <span id="display-view-date-label" class="text-[11px] font-bold text-emerald-300 px-1 truncate select-none">
+              Hari Ini
+            </span>
+            <button id="btn-next-date" onclick="changeViewDate(1)" title="Hari Berikutnya" class="p-1 hover:text-emerald-400 text-slate-300 font-bold text-xs transition disabled:opacity-30 disabled:pointer-events-none">
+              ▶
             </button>
           </div>
 
@@ -252,7 +263,8 @@
             Rekap Rentang Tanggal
           </div>
           
-          <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2.5 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1 shrink-0">
+          <!-- Kanan: Salin WhatsApp -->
+          <button id="btn-copy-absent" title="Salin laporan ke format WA" class="text-[11px] bg-slate-700 hover:bg-slate-600 active:bg-slate-800 px-2 py-1 rounded-lg text-emerald-300 font-medium border border-slate-600 flex items-center gap-1 shrink-0">
             📋 Salin WA
           </button>
         </div>
@@ -335,10 +347,14 @@
     let lastScanCooldown = {};
     let activeEditingRecord = null;
 
+    // Tanggal yang sedang aktif dilihat di tab Rekap Harian
+    let activeViewDate = new Date();
+
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
     const prayerList = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
+    const namaBulanIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
     function saveState() {
       localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
@@ -363,14 +379,48 @@
       return str;
     }
 
+    function formatDateToYMD(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
     function getTodayString() {
-      const now = new Date();
-      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      return formatDateToYMD(new Date());
     }
 
     function getSantriMasterName(id) {
       const p = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(id).trim().toLowerCase());
       return p ? p.name : '';
+    }
+
+    // Navigasi Tanggal Cepat Harian (Kemarin ◀ Tanggal ▶ Besok)
+    window.changeViewDate = function(offsetDays) {
+      activeViewDate.setDate(activeViewDate.getDate() + offsetDays);
+      
+      const today = new Date();
+      // Jangan izinkan maju melebihi hari ini
+      if (formatDateToYMD(activeViewDate) > formatDateToYMD(today)) {
+        activeViewDate = new Date();
+      }
+
+      updateDateStepperUI();
+      renderRekapView();
+    };
+
+    function updateDateStepperUI() {
+      const todayStr = getTodayString();
+      const activeStr = formatDateToYMD(activeViewDate);
+      const labelEl = document.getElementById('display-view-date-label');
+      const btnNext = document.getElementById('btn-next-date');
+
+      if (activeStr === todayStr) {
+        labelEl.textContent = 'Hari Ini';
+        btnNext.disabled = true;
+      } else {
+        const d = activeViewDate.getDate();
+        const m = namaBulanIndo[activeViewDate.getMonth()];
+        labelEl.textContent = `${d} ${m}`;
+        btnNext.disabled = false;
+      }
     }
 
     // Status Presensi (Scan)
@@ -404,11 +454,11 @@
       const btnAlfa = document.getElementById('filter-btn-has-alfa');
 
       if (filter === 'all') {
-        btnAll.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow';
-        btnAlfa.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+        btnAll.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow';
+        btnAlfa.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
       } else {
-        btnAlfa.className = 'px-2.5 py-1 text-xs font-semibold rounded-lg bg-rose-600 text-white shadow';
-        btnAll.className = 'px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+        btnAlfa.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white shadow';
+        btnAll.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
       }
       renderRekapView();
     };
@@ -618,7 +668,7 @@
       window.feedbackTimer = setTimeout(() => box.classList.add('hidden'), 4000);
     }
 
-    // Kontrol Kamera (Terkunci Tengah)
+    // Kontrol Kamera
     const btnStart = document.getElementById('btn-start-camera');
     const btnStop = document.getElementById('btn-stop-camera');
     const cameraPlaceholder = document.getElementById('camera-placeholder');
@@ -698,7 +748,6 @@
       });
     });
 
-    // Cetak Kartu Digital
     function showQrCard(id, name, category) {
       const box = document.getElementById('qr-preview-box');
       const container = document.getElementById('qrcode-container');
@@ -722,71 +771,6 @@
     document.getElementById('btn-close-preview').addEventListener('click', () => {
       document.getElementById('qr-preview-box').classList.add('hidden');
     });
-
-    function printCurrentPreviewCard() {
-      const name = document.getElementById('card-preview-name').textContent;
-      const role = document.getElementById('card-preview-role').textContent;
-      const idStr = document.getElementById('card-preview-id').textContent.replace('ID: ', '').trim();
-      const qrCanvas = document.querySelector('#qrcode-container canvas');
-      const qrImgSrc = qrCanvas ? qrCanvas.toDataURL() : '';
-
-      const win = window.open('', '_blank');
-      win.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>Cetak Kartu - ${name}</title>
-          <style>
-            @page { size: A4; margin: 1cm; }
-            body { font-family: sans-serif; display: flex; justify-content: flex-start; padding: 20px; margin: 0; }
-            .card {
-              width: 8.5cm;
-              height: 5.4cm;
-              border: 1px dashed #64748b;
-              border-radius: 12px;
-              padding: 12px;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-              box-sizing: border-box;
-            }
-            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
-            .header-title { font-weight: bold; font-size: 11px; color: #065f46; }
-            .body-content { display: flex; align-items: center; gap: 12px; margin: auto 0; }
-            .body-content img { width: 80px; height: 80px; }
-            .info-name { font-weight: bold; font-size: 13px; margin: 0; }
-            .info-id { font-size: 12px; color: #047857; font-weight: bold; font-family: monospace; margin: 4px 0; }
-            .info-desc { font-size: 8px; color: #64748b; margin: 0; }
-            .footer { border-top: 1px solid #f1f5f9; padding-top: 4px; font-size: 8px; color: #94a3b8; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="header">
-              <span class="header-title">🕌 KARTU PRESENSI SHOLAT</span>
-              <span style="font-size: 9px; font-weight: bold; background: #ecfdf5; color: #065f46; padding: 2px 6px; border-radius: 4px;">${role}</span>
-            </div>
-            <div class="body-content">
-              <img src="${qrImgSrc}">
-              <div>
-                <p class="info-name">${name}</p>
-                <p class="info-id">${idStr}</p>
-                <p class="info-desc">Tunjukkan barcode ini kepada petugas scanner saat memasuki mushola.</p>
-              </div>
-            </div>
-            <div class="footer">
-              <span>Pondok Pesantren Tahfidzul Qur'an Al Husna Lestari</span>
-              <span>${idStr}</span>
-            </div>
-          </div>
-          <script>
-            window.onload = function() { window.print(); window.close(); };
-          <\/script>
-        </body>
-        </html>
-      `);
-      win.document.close();
-    }
 
     // Render Tab Jamaah (Dengan Pencarian Instan)
     function renderJamaahList() {
@@ -826,13 +810,14 @@
 
     document.getElementById('jamaah-search-input').addEventListener('input', renderJamaahList);
 
-    // --- REKAP EVALUASI (HARI INI 5 WAKTU & RENTANG TANGGAL) ---
+    // --- REKAP EVALUASI (HARI INI / NAVIGASI TANGGAL & RENTANG TANGGAL) ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
       const btnToday = document.getElementById('btn-p-today');
       const btnRange = document.getElementById('btn-p-range');
       const rangeContainer = document.getElementById('range-picker-container');
+      const dateStepper = document.getElementById('date-stepper-box');
 
       [btnToday, btnRange].forEach(b => {
         b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
@@ -842,6 +827,7 @@
         btnToday.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
         rangeContainer.classList.add('hidden');
         document.getElementById('daily-filter-tabs').classList.remove('hidden');
+        dateStepper.classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.remove('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
@@ -851,13 +837,13 @@
         btnRange.className = 'flex-1 py-2 rounded-xl font-bold bg-emerald-600 text-white transition shadow';
         rangeContainer.classList.remove('hidden');
         document.getElementById('daily-filter-tabs').classList.add('hidden');
+        dateStepper.classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
 
-        // Inisialisasi default rentang 7 hari terakhir jika belum diisi
         const todayStr = getTodayString();
         if (!document.getElementById('range-end-date').value) {
           document.getElementById('range-end-date').value = todayStr;
@@ -865,10 +851,11 @@
         if (!document.getElementById('range-start-date').value) {
           const past = new Date();
           past.setDate(past.getDate() - 6);
-          document.getElementById('range-start-date').value = `${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}-${String(past.getDate()).padStart(2, '0')}`;
+          document.getElementById('range-start-date').value = formatDateToYMD(past);
         }
       }
 
+      updateDateStepperUI();
       renderRekapView();
     };
 
@@ -970,18 +957,18 @@
 
     // Simpan Alfa Massal Sesi Sholat Aktif ke Spreadsheet
     window.saveAlfaToSpreadsheet = function() {
-      const todayStr = getTodayString();
+      const viewDateStr = formatDateToYMD(activeViewDate);
       const prayer = document.getElementById('prayer-select').value;
 
-      const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr && l.prayer === prayer);
+      const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr && l.prayer === prayer);
       const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
       const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
 
       if (absentList.length === 0) {
-        return alert(`Semua santri sudah memiliki catatan pada sholat ${prayer} hari ini.`);
+        return alert(`Semua santri sudah memiliki catatan pada sholat ${prayer} tanggal ${viewDateStr}.`);
       }
 
-      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} hari ini ke Google Sheets sebagai 'Alfa'?`;
+      const confirmMsg = `Simpan ${absentList.length} santri yang belum hadir pada sholat ${prayer} (${viewDateStr}) ke Google Sheets sebagai 'Alfa'?`;
       if (!confirm(confirmMsg)) return;
 
       const recordsToSend = absentList.map(j => ({
@@ -989,7 +976,7 @@
         name: j.name,
         category: j.category,
         prayer: prayer,
-        date: todayStr,
+        date: viewDateStr,
         time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
       }));
 
@@ -1025,25 +1012,298 @@
       }
     };
 
+    // ==============================================================
+    // GENERATE LAPORAN RESMI PDF PER SANTRI UNTUK WALI SANTRI
+    // ==============================================================
+    window.printStudentPDFReport = function(santriId) {
+      const santri = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(santriId).trim().toLowerCase());
+      if (!santri) return alert('Data santri tidak ditemukan.');
+
+      let startDateStr = '';
+      let endDateStr = '';
+      let dateList = [];
+
+      if (currentPeriod === 'today') {
+        const dStr = formatDateToYMD(activeViewDate);
+        startDateStr = dStr;
+        endDateStr = dStr;
+        dateList.push(dStr);
+      } else {
+        startDateStr = document.getElementById('range-start-date').value;
+        endDateStr = document.getElementById('range-end-date').value;
+        
+        const dCur = new Date(startDateStr);
+        const dEnd = new Date(endDateStr);
+        while (dCur <= dEnd) {
+          dateList.push(formatDateToYMD(dCur));
+          dCur.setDate(dCur.getDate() + 1);
+        }
+      }
+
+      // Filter log khusus santri ini pada periode tersebut
+      const sId = String(santri.id).trim().toLowerCase();
+      const studentLogs = logsData.filter(l => {
+        const d = parseDateNormalized(l.date);
+        return String(l.jamaahId).trim().toLowerCase() === sId && d >= startDateStr && d <= endDateStr;
+      });
+
+      // Hitung statistik
+      const totalSesi = dateList.length * 5;
+      let hadirCount = 0;
+      let masbuqCount = 0;
+      let pulangCount = 0;
+      let sakitCount = 0;
+      let alfaCount = 0;
+
+      let tableRowsHtml = '';
+
+      dateList.forEach(tgl => {
+        let pCols = '';
+        prayerList.forEach(p => {
+          const logFound = studentLogs.find(l => parseDateNormalized(l.date) === tgl && l.prayer === p);
+          let stText = '❌ Alfa';
+          let stColor = 'color: #e11d48; font-weight: bold;';
+
+          if (logFound) {
+            if (logFound.status === 'Tepat Waktu') {
+              stText = '✅ Tepat';
+              stColor = 'color: #047857; font-weight: bold;';
+              hadirCount++;
+            } else if (logFound.status === 'Masbuq') {
+              stText = '⚠️ Masbuq';
+              stColor = 'color: #b45309; font-weight: bold;';
+              hadirCount++;
+              masbuqCount++;
+            } else if (logFound.status === 'Izin Pulang') {
+              stText = '🏠 Pulang';
+              stColor = 'color: #1d4ed8; font-weight: bold;';
+              pulangCount++;
+            } else if (logFound.status === 'Sakit') {
+              stText = '💊 Sakit';
+              stColor = 'color: #7e22ce; font-weight: bold;';
+              sakitCount++;
+            } else {
+              alfaCount++;
+            }
+          } else {
+            alfaCount++;
+          }
+
+          pCols += `<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-size: 11px; ${stColor}">${stText}</td>`;
+        });
+
+        tableRowsHtml += `
+          <tr>
+            <td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-size: 11px; font-family: monospace;">${tgl}</td>
+            ${pCols}
+          </tr>
+        `;
+      });
+
+      const persentase = totalSesi > 0 ? Math.round((hadirCount / totalSesi) * 100) : 0;
+      const todayPrint = (new Date()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+      // Buat Jendela Cetak PDF A4
+      const printWin = window.open('', '_blank');
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html lang="id">
+        <head>
+          <meta charset="UTF-8">
+          <title>Laporan_Sholat_${santri.name.replace(/\\s+/g, '_')}</title>
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 1.5cm;
+            }
+            body {
+              font-family: Arial, Helvetica, sans-serif;
+              color: #0f172a;
+              margin: 0;
+              padding: 0;
+            }
+            .header-table {
+              width: 100%;
+              border-bottom: 2px solid #047857;
+              padding-bottom: 10px;
+              margin-bottom: 15px;
+            }
+            .title-sub {
+              font-size: 12px;
+              color: #475569;
+              margin-top: 2px;
+            }
+            .box-stat {
+              background: #f8fafc;
+              border: 1px solid #e2e8f0;
+              border-radius: 8px;
+              padding: 10px;
+              margin-bottom: 15px;
+            }
+            .stat-grid {
+              display: grid;
+              grid-template-columns: repeat(5, 1fr);
+              text-align: center;
+              gap: 8px;
+            }
+            .stat-card {
+              border-right: 1px solid #cbd5e1;
+            }
+            .stat-card:last-child {
+              border-right: none;
+            }
+            table.main-data {
+              width: 100%;
+              border-collapse: collapse;
+              margin-bottom: 20px;
+            }
+            table.main-data th {
+              background: #047857;
+              color: white;
+              padding: 8px 6px;
+              font-size: 11px;
+              border: 1px solid #047857;
+            }
+            .ttd-table {
+              width: 100%;
+              margin-top: 25px;
+            }
+            .no-print-bar {
+              background: #0f172a;
+              color: white;
+              padding: 12px;
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            @media print {
+              .no-print-bar { display: none !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print-bar">
+            <span>💡 <b>Panduan Simpan PDF:</b> Pada opsi Printer/Tujuan, pilih <b>"Simpan sebagai PDF" (Save as PDF)</b> lalu klik Simpan.</span>
+          </div>
+
+          <!-- KOP RESMI PONDOK -->
+          <table class="header-table">
+            <tr>
+              <td style="width: 55px; text-align: left; vertical-align: middle; font-size: 38px;">🕌</td>
+              <td style="vertical-align: middle;">
+                <h2 style="margin: 0; color: #047857; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">PONDOK PESANTREN TAHFIDZUL QUR'AN AL HUSNA LESTARI</h2>
+                <div class="title-sub">Laporan Evaluasi Kedisiplinan Sholat Fardhu Berjamaah</div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- BIODATA SANTRI -->
+          <table style="width: 100%; font-size: 12px; margin-bottom: 12px;">
+            <tr>
+              <td style="width: 15%;"><b>Nama Santri</b></td>
+              <td style="width: 35%;">: <b>${santri.name}</b></td>
+              <td style="width: 15%;"><b>Periode</b></td>
+              <td style="width: 35%;">: ${startDateStr} s/d ${endDateStr}</td>
+            </tr>
+            <tr>
+              <td><b>Nomor ID</b></td>
+              <td>: <span style="font-family: monospace;">${santri.id}</span></td>
+              <td><b>Kategori</b></td>
+              <td>: ${santri.category}</td>
+            </tr>
+          </table>
+
+          <!-- STATISTIK RINGKASAN -->
+          <div class="box-stat">
+            <div class="stat-grid">
+              <div class="stat-card">
+                <span style="font-size: 10px; color: #64748b;">Target Sesi</span>
+                <div style="font-size: 16px; font-weight: bold; color: #0f172a;">${totalSesi}</div>
+              </div>
+              <div class="stat-card">
+                <span style="font-size: 10px; color: #64748b;">Hadir</span>
+                <div style="font-size: 16px; font-weight: bold; color: #047857;">${hadirCount}</div>
+              </div>
+              <div class="stat-card">
+                <span style="font-size: 10px; color: #64748b;">Masbuq</span>
+                <div style="font-size: 16px; font-weight: bold; color: #b45309;">${masbuqCount}x</div>
+              </div>
+              <div class="stat-card">
+                <span style="font-size: 10px; color: #64748b;">Izin / Sakit</span>
+                <div style="font-size: 16px; font-weight: bold; color: #1d4ed8;">${pulangCount + sakitCount}x</div>
+              </div>
+              <div class="stat-card">
+                <span style="font-size: 10px; color: #64748b;">Alfa / Absen</span>
+                <div style="font-size: 16px; font-weight: bold; color: #e11d48;">${alfaCount}x</div>
+              </div>
+            </div>
+            <div style="text-align: center; margin-top: 8px; font-size: 11px; font-weight: bold; color: #047857;">
+              Tingkat Kehadiran Jamaah: ${persentase}%
+            </div>
+          </div>
+
+          <!-- TABEL DETAIL 5 WAKTU -->
+          <table class="main-data">
+            <thead>
+              <tr>
+                <th style="width: 20%;">Tanggal</th>
+                <th style="width: 16%;">Subuh</th>
+                <th style="width: 16%;">Dzuhur</th>
+                <th style="width: 16%;">Ashar</th>
+                <th style="width: 16%;">Maghrib</th>
+                <th style="width: 16%;">Isya</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tableRowsHtml}
+            </tbody>
+          </table>
+
+          <!-- TANDA TANGAN & PENGESAHAN -->
+          <table class="ttd-table" style="font-size: 11px; text-align: center;">
+            <tr>
+              <td style="width: 50%;">
+                Mengetahui,<br><b>Wali Santri</b>
+                <br><br><br><br>
+                ( .................................................. )
+              </td>
+              <td style="width: 50%;">
+                Klaten, ${todayPrint}<br><b>Musyrif / Pengasuhan Santri</b>
+                <br><br><br><br>
+                <b>( Tim Kedisiplinan PPTQ )</b>
+              </td>
+            </tr>
+          </table>
+
+          <script>
+            window.onload = function() {
+              window.print();
+            };
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWin.document.close();
+    };
+
     // Render Rekap Utama
     function renderRekapView() {
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
       const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
-      const todayStr = getTodayString();
 
       // ==========================================
-      // MODE 1: HARI INI (MATRIKS 5 WAKTU LENGKAP)
+      // MODE 1: REKAP HARIAN (NAVIGASI TANGGAL BEBAS)
       // ==========================================
       if (currentPeriod === 'today') {
-        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
+        const viewDateStr = formatDateToYMD(activeViewDate);
+        const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
 
         let totalHadirSemua = 0;
         let totalAlfaSemua = 0;
 
         let dailyAnalysis = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+          const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
 
           let prayerStatus = { Subuh: '', Dzuhur: '', Ashar: '', Maghrib: '', Isya: '' };
           let hadirHariIni = 0;
@@ -1078,19 +1338,16 @@
           };
         });
 
-        // Filter pencarian
         if (searchKeyword) {
           dailyAnalysis = dailyAnalysis.filter(j => 
             j.name.toLowerCase().includes(searchKeyword) || String(j.id).toLowerCase().includes(searchKeyword)
           );
         }
 
-        // Filter: Semua Santri vs Yang Ada Alfa Hari Ini
         if (currentDailyFilter === 'alfa') {
           dailyAnalysis = dailyAnalysis.filter(j => j.alfaCount > 0);
         }
 
-        // Urutkan yang alfa paling banyak di atas
         dailyAnalysis.sort((a, b) => b.alfaCount - a.alfaCount);
 
         document.getElementById('today-count').textContent = totalHadirSemua;
@@ -1111,11 +1368,15 @@
                   <p class="font-bold ${hasAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${j.name}</p>
                   <p class="text-slate-400 font-mono text-[10px]">${j.id} • Hadir: ${j.hadirCount}/5 • Alfa: ${j.alfaCount}x</p>
                 </div>
-                <button onclick="openEditModal('${j.id}', '${j.name}', '', '${todayStr}', '')" title="Koreksi salah satu sholat santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
-                  ✏️ Koreksi
-                </button>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="printStudentPDFReport('${j.id}')" title="Cetak Laporan PDF untuk Orang Tua" class="p-1 px-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow flex items-center gap-1">
+                    📄 PDF
+                  </button>
+                  <button onclick="openEditModal('${j.id}', '${j.name}', '', '${viewDateStr}', '')" title="Koreksi salah satu sholat santri ini" class="p-1 px-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 rounded-lg text-[10px] font-bold">
+                    ✏️
+                  </button>
+                </div>
               </div>
-              <!-- Matriks 5 Waktu Sholat -->
               <div class="flex flex-wrap gap-1 pt-0.5 border-t border-slate-800/80">
                 ${prayerList.map(p => getPrayerBadge(p, j.prayerStatus[p])).join('')}
               </div>
@@ -1140,7 +1401,6 @@
           return;
         }
 
-        // Hitung selisih hari inklusif
         const d1 = new Date(startDate);
         const d2 = new Date(endDate);
         const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
@@ -1148,7 +1408,6 @@
 
         document.getElementById('periodic-header-title').textContent = `Rekap ${startDate} s/d ${endDate} (${diffDays} Hari - Target ${targetPerSantri} Sesi)`;
 
-        // Ambil log yang berada di dalam rentang
         const validLogs = logsData.filter(l => {
           const d = parseDateNormalized(l.date);
           return d >= startDate && d <= endDate;
@@ -1214,8 +1473,11 @@
                 <p class="font-bold ${isHighAlfa ? 'text-rose-300' : 'text-slate-200'}">${idx + 1}. ${r.name}</p>
                 <p class="text-slate-400 font-mono text-[11px]">${r.id} • Hadir: ${r.hadir}/${r.target}${noteStr}</p>
               </div>
-              <div class="text-right">
-                <span class="px-2.5 py-1 rounded-lg text-[11px] font-bold ${r.alfa > 0 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
+              <div class="flex items-center gap-1.5">
+                <button onclick="printStudentPDFReport('${r.id}')" title="Cetak Laporan PDF untuk Orang Tua" class="p-1 px-2 bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg text-[10px] font-bold shadow flex items-center gap-1">
+                  📄 PDF
+                </button>
+                <span class="px-2 py-1 rounded-lg text-[10px] font-bold ${r.alfa > 0 ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'}">
                   ${r.alfa}x Alfa
                 </span>
               </div>
@@ -1227,18 +1489,18 @@
 
     // Salin Laporan WhatsApp (Adaptif Harian vs Rentang)
     document.getElementById('btn-copy-absent').addEventListener('click', () => {
-      const todayStr = getTodayString();
       let text = "";
 
       if (currentPeriod === 'today') {
-        const todayLogs = logsData.filter(l => parseDateNormalized(l.date) === todayStr);
+        const viewDateStr = formatDateToYMD(activeViewDate);
+        const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
 
-        text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${todayStr}\n\n`;
+        text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${viewDateStr}\n\n`;
 
         let adaCatatan = false;
-        jamaahData.forEach((santri, idx) => {
+        jamaahData.forEach((santri) => {
           const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = todayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+          const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
 
           let bolos = [];
           prayerList.forEach(p => {
@@ -1255,7 +1517,7 @@
         });
 
         if (!adaCatatan) {
-          text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu hari ini!`;
+          text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu pada tanggal ini!`;
         }
 
       } else {
@@ -1317,6 +1579,7 @@
       }).catch(() => alert('Gagal menyalin.'));
     });
 
+    updateDateStepperUI();
     renderJamaahList();
     renderRekapView();
   </script>
