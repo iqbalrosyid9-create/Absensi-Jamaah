@@ -139,7 +139,7 @@
       </div>
     </section>
 
-    <!-- Tab 2: Jamaah (Dengan Pencarian & Cetak Multiple) -->
+    <!-- Tab 2: Jamaah (Dengan Pencarian Instan) -->
     <section id="tab-jamaah" class="hidden space-y-4">
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
@@ -232,17 +232,25 @@
         </button>
       </div>
 
-      <!-- Baris Filter & Navigasi Tanggal Cepat (Kemarin ◀ Tanggal ▶ Besok) -->
+      <!-- Baris Filter & Navigasi Tanggal Cepat (Urutan: Sesi Sekarang -> Ada Alfa -> Semua) -->
       <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-700/60 gap-1.5">
           
-          <!-- Kiri: Filter Kategori Santri -->
+          <!-- Kiri: Filter Kategori Santri (Urutan: Sesi Sekarang -> Ada Alfa -> Semua) -->
           <div id="daily-filter-tabs" class="flex space-x-1 shrink-0">
-            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow">
-              Semua
+            <!-- 1. Current Prayer -->
+            <button id="filter-btn-current-prayer" onclick="setDailyFilter('current_prayer')" class="px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white shadow flex items-center gap-1">
+              ⏳ <span id="label-active-prayer-filter">Sesi Sekarang</span>
             </button>
+            
+            <!-- 2. Ada Alfa -->
             <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
               Ada Alfa
+            </button>
+
+            <!-- 3. Semua -->
+            <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
+              Semua
             </button>
           </div>
 
@@ -342,12 +350,11 @@
     let isScanning = false;
     
     let currentPeriod = 'today'; // 'today' atau 'range'
-    let currentDailyFilter = 'all'; // 'all' atau 'alfa'
+    let currentDailyFilter = 'current_prayer'; // Default fokus ke sesi aktif: Current Prayer -> Alfa -> All
     let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
     let activeEditingRecord = null;
 
-    // Tanggal yang sedang aktif dilihat di tab Rekap Harian
     let activeViewDate = new Date();
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
@@ -397,7 +404,6 @@
       activeViewDate.setDate(activeViewDate.getDate() + offsetDays);
       
       const today = new Date();
-      // Jangan izinkan maju melebihi hari ini
       if (formatDateToYMD(activeViewDate) > formatDateToYMD(today)) {
         activeViewDate = new Date();
       }
@@ -447,19 +453,25 @@
       }
     };
 
-    // Filter Harian (Semua vs Ada Alfa)
+    // Filter Harian (Urutan: Current Prayer -> Alfa -> All)
     window.setDailyFilter = function(filter) {
       currentDailyFilter = filter;
-      const btnAll = document.getElementById('filter-btn-all-daily');
+      const btnCurrent = document.getElementById('filter-btn-current-prayer');
       const btnAlfa = document.getElementById('filter-btn-has-alfa');
+      const btnAll = document.getElementById('filter-btn-all-daily');
 
-      if (filter === 'all') {
-        btnAll.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow';
-        btnAlfa.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
-      } else {
-        btnAlfa.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white shadow';
-        btnAll.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+      [btnCurrent, btnAlfa, btnAll].forEach(b => {
+        if (b) b.className = 'px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white';
+      });
+
+      if (filter === 'current_prayer') {
+        if (btnCurrent) btnCurrent.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white shadow flex items-center gap-1';
+      } else if (filter === 'alfa') {
+        if (btnAlfa) btnAlfa.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-rose-600 text-white shadow';
+      } else if (filter === 'all') {
+        if (btnAll) btnAll.className = 'px-2 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white shadow';
       }
+
       renderRekapView();
     };
 
@@ -810,7 +822,7 @@
 
     document.getElementById('jamaah-search-input').addEventListener('input', renderJamaahList);
 
-    // --- REKAP EVALUASI (HARI INI / NAVIGASI TANGGAL & RENTANG TANGGAL) ---
+    // --- REKAP EVALUASI ---
     window.switchPeriod = function(period) {
       currentPeriod = period;
 
@@ -1040,14 +1052,12 @@
         }
       }
 
-      // Filter log khusus santri ini pada periode tersebut
       const sId = String(santri.id).trim().toLowerCase();
       const studentLogs = logsData.filter(l => {
         const d = parseDateNormalized(l.date);
         return String(l.jamaahId).trim().toLowerCase() === sId && d >= startDateStr && d <= endDateStr;
       });
 
-      // Hitung statistik
       const totalSesi = dateList.length * 5;
       let hadirCount = 0;
       let masbuqCount = 0;
@@ -1103,7 +1113,6 @@
       const persentase = totalSesi > 0 ? Math.round((hadirCount / totalSesi) * 100) : 0;
       const todayPrint = (new Date()).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
-      // Buat Jendela Cetak PDF A4
       const printWin = window.open('', '_blank');
       printWin.document.write(`
         <!DOCTYPE html>
@@ -1258,7 +1267,7 @@
             </tbody>
           </table>
 
-          <!-- TANDA TANGAN & PENGESAHAN -->
+          <!-- TANDA TANGAN & PENGESAHAN DENGAN LINE BREAK -->
           <table class="ttd-table" style="font-size: 11px; text-align: center;">
             <tr>
               <td style="width: 50%;">
@@ -1267,7 +1276,8 @@
                 ( .................................................. )
               </td>
               <td style="width: 50%;">
-                Klaten, ${todayPrint}<br><b>Musyrif / Pengasuhan Santri</b>
+                Klaten, ${todayPrint}<br>
+                <b>Kesantrian<br>PPTQ Al Husna Lestari Putra</b>
                 <br><br><br><br>
                 <b>( Tim Kedisiplinan PPTQ )</b>
               </td>
@@ -1290,6 +1300,13 @@
       const container = document.getElementById('rekap-display-list');
       container.innerHTML = '';
       const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
+      const activePrayer = document.getElementById('prayer-select').value;
+
+      // Update teks tombol sesi aktif
+      const labelActiveEl = document.getElementById('label-active-prayer-filter');
+      if (labelActiveEl) {
+        labelActiveEl.textContent = 'Belum ' + activePrayer;
+      }
 
       // ==========================================
       // MODE 1: REKAP HARIAN (NAVIGASI TANGGAL BEBAS)
@@ -1344,7 +1361,13 @@
           );
         }
 
-        if (currentDailyFilter === 'alfa') {
+        // Filter: Sesi Sekarang vs Ada Alfa vs Semua
+        if (currentDailyFilter === 'current_prayer') {
+          dailyAnalysis = dailyAnalysis.filter(j => {
+            const st = j.prayerStatus[activePrayer];
+            return !st || st === 'Belum Ada' || st === 'Alfa';
+          });
+        } else if (currentDailyFilter === 'alfa') {
           dailyAnalysis = dailyAnalysis.filter(j => j.alfaCount > 0);
         }
 
@@ -1579,6 +1602,8 @@
       }).catch(() => alert('Gagal menyalin.'));
     });
 
+    // Inisialisasi tampilan
+    window.setDailyFilter('current_prayer');
     updateDateStepperUI();
     renderJamaahList();
     renderRekapView();
