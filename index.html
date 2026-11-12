@@ -48,8 +48,11 @@
         </div>
       </div>
       <div class="flex items-center space-x-1.5 shrink-0">
-        <button id="btn-sync-manual" class="px-2 py-1 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center gap-1">
-          🔄 Sync
+        <button id="btn-sync-manual" title="Sinkronisasi Google Sheets" class="p-1.5 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center justify-center">
+          🔄
+        </button>
+        <button id="btn-open-settings" onclick="openSettingsModal()" title="Pengaturan Jadwal Sholat" class="p-1.5 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center justify-center">
+          ⚙️
         </button>
         <span id="current-prayer-badge" class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-950 text-emerald-300 border border-emerald-600">
           Subuh
@@ -208,19 +211,23 @@
         </button>
       </div>
 
-      <!-- 3 Kartu Angka Statistik -->
-      <div class="grid grid-cols-3 gap-2">
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-1" class="text-[11px] text-slate-400">Total Hadir</span>
-          <p id="today-count" class="text-lg font-bold text-emerald-400 mt-0.5">0</p>
+      <!-- 4 Kartu Angka Statistik (Termasuk Hadir Sesi Aktif) -->
+      <div id="stats-grid-container" class="grid grid-cols-4 gap-1.5">
+        <div id="card-stat-session" class="bg-slate-800 border border-amber-600/50 p-2 rounded-2xl text-center">
+          <span id="label-stat-session" class="text-[10px] text-amber-300 font-semibold block truncate">Hadir Subuh</span>
+          <p id="session-present-count" class="text-base font-bold text-amber-400 mt-0.5">0</p>
         </div>
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-2" class="text-[11px] text-slate-400">Total Alfa</span>
-          <p id="absent-count" class="text-lg font-bold text-rose-400 mt-0.5">0</p>
+        <div class="bg-slate-800 border border-slate-700 p-2 rounded-2xl text-center">
+          <span id="label-stat-1" class="text-[10px] text-slate-400 block truncate">Total Hadir</span>
+          <p id="today-count" class="text-base font-bold text-emerald-400 mt-0.5">0</p>
         </div>
-        <div class="bg-slate-800 border border-slate-700 p-2.5 rounded-2xl text-center">
-          <span id="label-stat-3" class="text-[11px] text-slate-400">Target/Anak</span>
-          <p id="total-registered-count" class="text-lg font-bold text-amber-300 mt-0.5">5 Sesi</p>
+        <div class="bg-slate-800 border border-slate-700 p-2 rounded-2xl text-center">
+          <span id="label-stat-2" class="text-[10px] text-slate-400 block truncate">Total Alfa</span>
+          <p id="absent-count" class="text-base font-bold text-rose-400 mt-0.5">0</p>
+        </div>
+        <div class="bg-slate-800 border border-slate-700 p-2 rounded-2xl text-center">
+          <span id="label-stat-3" class="text-[10px] text-slate-400 block truncate">Target/Anak</span>
+          <p id="total-registered-count" class="text-base font-bold text-sky-300 mt-0.5">5 Sesi</p>
         </div>
       </div>
 
@@ -238,17 +245,12 @@
           
           <!-- Kiri: Filter Kategori Santri (Urutan: Sesi Sekarang -> Ada Alfa -> Semua) -->
           <div id="daily-filter-tabs" class="flex space-x-1 shrink-0">
-            <!-- 1. Current Prayer -->
             <button id="filter-btn-current-prayer" onclick="setDailyFilter('current_prayer')" class="px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white shadow flex items-center gap-1">
               ⏳ <span id="label-active-prayer-filter">Sesi Sekarang</span>
             </button>
-            
-            <!-- 2. Ada Alfa -->
             <button id="filter-btn-has-alfa" onclick="setDailyFilter('alfa')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
               Ada Alfa
             </button>
-
-            <!-- 3. Semua -->
             <button id="filter-btn-all-daily" onclick="setDailyFilter('all')" class="px-2 py-1 text-[11px] font-medium rounded-lg bg-slate-700 text-slate-300 hover:text-white">
               Semua
             </button>
@@ -278,6 +280,82 @@
     </section>
 
   </main>
+
+  <!-- Modal Pengaturan Jadwal Sholat -->
+  <div id="modal-settings" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 w-full max-w-sm space-y-3 shadow-2xl">
+      <div class="border-b border-slate-700/60 pb-2 flex items-center justify-between">
+        <div>
+          <h3 class="text-sm font-bold text-white flex items-center gap-1.5">
+            <span>⚙️</span> Pengaturan Jadwal Sholat
+          </h3>
+          <p class="text-[11px] text-slate-400 mt-0.5">Atur jam pergantian sesi sholat otomatis</p>
+        </div>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white text-sm font-bold px-2">✕</button>
+      </div>
+
+      <div class="space-y-2 text-xs max-h-80 overflow-y-auto pr-1">
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-400 w-16">Subuh</span>
+          <div class="flex items-center gap-1.5">
+            <input type="time" id="set-subuh-start" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+            <span class="text-slate-500">-</span>
+            <input type="time" id="set-subuh-end" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-400 w-16">Dzuhur</span>
+          <div class="flex items-center gap-1.5">
+            <input type="time" id="set-dzuhur-start" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+            <span class="text-slate-500">-</span>
+            <input type="time" id="set-dzuhur-end" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-400 w-16">Ashar</span>
+          <div class="flex items-center gap-1.5">
+            <input type="time" id="set-ashar-start" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+            <span class="text-slate-500">-</span>
+            <input type="time" id="set-ashar-end" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-400 w-16">Maghrib</span>
+          <div class="flex items-center gap-1.5">
+            <input type="time" id="set-maghrib-start" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+            <span class="text-slate-500">-</span>
+            <input type="time" id="set-maghrib-end" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-700/80 flex items-center justify-between gap-2">
+          <span class="font-bold text-emerald-400 w-16">Isya</span>
+          <div class="flex items-center gap-1.5">
+            <input type="time" id="set-isya-start" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+            <span class="text-slate-500">-</span>
+            <input type="time" id="set-isya-end" class="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono text-xs">
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between gap-2 border-t border-slate-700/60">
+        <button onclick="resetPrayerSchedule()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-amber-300 rounded-xl text-[11px] font-semibold">
+          Reset Default
+        </button>
+        <div class="flex gap-1.5">
+          <button onclick="closeSettingsModal()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-xs font-medium">
+            Batal
+          </button>
+          <button onclick="savePrayerSchedule()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow">
+            Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Edit Status Laporan (Koreksi Status) -->
   <div id="modal-edit-status" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -356,6 +434,16 @@
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
 
+    const defaultSchedule = {
+      Subuh:   { start: "04:00", end: "06:30" },
+      Dzuhur:  { start: "11:30", end: "14:30" },
+      Ashar:   { start: "14:45", end: "17:30" },
+      Maghrib: { start: "17:35", end: "19:00" },
+      Isya:    { start: "19:01", end: "03:59" }
+    };
+
+    let prayerSchedule = JSON.parse(localStorage.getItem('absensi_prayer_schedule')) || JSON.parse(JSON.stringify(defaultSchedule));
+
     const prayerList = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
     const namaBulanIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
@@ -363,6 +451,85 @@
       localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
     }
+
+    function timeToMinutes(timeStr) {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':');
+      return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+    }
+
+    function isMinutesInRange(nowMin, startStr, endStr) {
+      const s = timeToMinutes(startStr);
+      const e = timeToMinutes(endStr);
+      if (s <= e) {
+        return nowMin >= s && nowMin <= e;
+      } else {
+        // Melewati tengah malam (misal 19:01 s/d 03:59)
+        return nowMin >= s || nowMin <= e;
+      }
+    }
+
+    // Modal Pengaturan Jadwal Sholat
+    window.openSettingsModal = function() {
+      document.getElementById('set-subuh-start').value = prayerSchedule.Subuh.start;
+      document.getElementById('set-subuh-end').value = prayerSchedule.Subuh.end;
+      document.getElementById('set-dzuhur-start').value = prayerSchedule.Dzuhur.start;
+      document.getElementById('set-dzuhur-end').value = prayerSchedule.Dzuhur.end;
+      document.getElementById('set-ashar-start').value = prayerSchedule.Ashar.start;
+      document.getElementById('set-ashar-end').value = prayerSchedule.Ashar.end;
+      document.getElementById('set-maghrib-start').value = prayerSchedule.Maghrib.start;
+      document.getElementById('set-maghrib-end').value = prayerSchedule.Maghrib.end;
+      document.getElementById('set-isya-start').value = prayerSchedule.Isya.start;
+      document.getElementById('set-isya-end').value = prayerSchedule.Isya.end;
+
+      document.getElementById('modal-settings').classList.remove('hidden');
+    };
+
+    window.closeSettingsModal = function() {
+      document.getElementById('modal-settings').classList.add('hidden');
+    };
+
+    window.savePrayerSchedule = function() {
+      prayerSchedule = {
+        Subuh: {
+          start: document.getElementById('set-subuh-start').value || defaultSchedule.Subuh.start,
+          end: document.getElementById('set-subuh-end').value || defaultSchedule.Subuh.end
+        },
+        Dzuhur: {
+          start: document.getElementById('set-dzuhur-start').value || defaultSchedule.Dzuhur.start,
+          end: document.getElementById('set-dzuhur-end').value || defaultSchedule.Dzuhur.end
+        },
+        Ashar: {
+          start: document.getElementById('set-ashar-start').value || defaultSchedule.Ashar.start,
+          end: document.getElementById('set-ashar-end').value || defaultSchedule.Ashar.end
+        },
+        Maghrib: {
+          start: document.getElementById('set-maghrib-start').value || defaultSchedule.Maghrib.start,
+          end: document.getElementById('set-maghrib-end').value || defaultSchedule.Maghrib.end
+        },
+        Isya: {
+          start: document.getElementById('set-isya-start').value || defaultSchedule.Isya.start,
+          end: document.getElementById('set-isya-end').value || defaultSchedule.Isya.end
+        }
+      };
+
+      localStorage.setItem('absensi_prayer_schedule', JSON.stringify(prayerSchedule));
+      window.userChangedPrayer = false;
+      updateClock();
+      if (currentPeriod === 'today') renderRekapView();
+      closeSettingsModal();
+      showFeedback('success', 'Jadwal Disimpan', 'Pengaturan waktu sholat telah diperbarui.');
+    };
+
+    window.resetPrayerSchedule = function() {
+      if (!confirm('Kembalikan pengaturan waktu sholat ke jadwal awal?')) return;
+      prayerSchedule = JSON.parse(JSON.stringify(defaultSchedule));
+      localStorage.setItem('absensi_prayer_schedule', JSON.stringify(prayerSchedule));
+      openSettingsModal();
+      window.userChangedPrayer = false;
+      updateClock();
+      if (currentPeriod === 'today') renderRekapView();
+    };
 
     function parseDateNormalized(rawDate) {
       if (!rawDate) return '';
@@ -544,11 +711,12 @@
     function getEstimatedPrayer() {
       const now = new Date();
       const totalMinutes = now.getHours() * 60 + now.getMinutes();
-      if (totalMinutes >= 270 && totalMinutes < 390) return "Subuh";
-      if (totalMinutes >= 705 && totalMinutes < 870) return "Dzuhur";
-      if (totalMinutes >= 900 && totalMinutes < 1050) return "Ashar";
-      if (totalMinutes >= 1065 && totalMinutes < 1140) return "Maghrib";
-      if (totalMinutes >= 1140 || totalMinutes < 240) return "Isya";
+
+      for (const p of prayerList) {
+        if (prayerSchedule[p] && isMinutesInRange(totalMinutes, prayerSchedule[p].start, prayerSchedule[p].end)) {
+          return p;
+        }
+      }
       return "Dzuhur";
     }
 
@@ -558,7 +726,11 @@
       const curPrayer = getEstimatedPrayer();
       document.getElementById('current-prayer-badge').textContent = curPrayer;
       if (!window.userChangedPrayer) {
+        const prevVal = document.getElementById('prayer-select').value;
         document.getElementById('prayer-select').value = curPrayer;
+        if (prevVal !== curPrayer && currentPeriod === 'today') {
+          renderRekapView();
+        }
       }
     }
     setInterval(updateClock, 1000);
@@ -826,6 +998,8 @@
       const btnRange = document.getElementById('btn-p-range');
       const rangeContainer = document.getElementById('range-picker-container');
       const dateStepper = document.getElementById('date-stepper-box');
+      const statsGrid = document.getElementById('stats-grid-container');
+      const cardSession = document.getElementById('card-stat-session');
 
       [btnToday, btnRange].forEach(b => {
         b.className = 'flex-1 py-2 rounded-xl font-semibold bg-slate-900 text-slate-400 hover:text-white transition';
@@ -838,6 +1012,8 @@
         dateStepper.classList.remove('hidden');
         document.getElementById('periodic-header-title').classList.add('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.remove('hidden');
+        statsGrid.className = 'grid grid-cols-4 gap-1.5';
+        cardSession.classList.remove('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -848,6 +1024,8 @@
         dateStepper.classList.add('hidden');
         document.getElementById('periodic-header-title').classList.remove('hidden');
         document.getElementById('btn-save-alfa-sheet').classList.add('hidden');
+        statsGrid.className = 'grid grid-cols-3 gap-2';
+        cardSession.classList.add('hidden');
         document.getElementById('label-stat-1').textContent = 'Total Hadir';
         document.getElementById('label-stat-2').textContent = 'Total Alfa';
         document.getElementById('label-stat-3').textContent = 'Target/Anak';
@@ -1115,7 +1293,7 @@
         <html lang="id">
         <head>
           <meta charset="UTF-8">
-          <title>Laporan_Sholat_${santri.name.replace(/\\s+/g, '_')}</title>
+          <title>Laporan_Sholat_${santri.name.replace(/\s+/g, '_')}</title>
           <style>
             @page {
               size: A4 portrait;
@@ -1313,6 +1491,7 @@
 
         let totalHadirSemua = 0;
         let totalAlfaSemua = 0;
+        let hadirSesiAktif = 0;
 
         let dailyAnalysis = jamaahData.map(santri => {
           const sId = String(santri.id).trim().toLowerCase();
@@ -1328,6 +1507,9 @@
               prayerStatus[p] = pLog.status;
               if (pLog.status === 'Tepat Waktu' || pLog.status === 'Masbuq') {
                 hadirHariIni++;
+                if (p === activePrayer) {
+                  hadirSesiAktif++;
+                }
               } else if (pLog.status === 'Alfa') {
                 alfaHariIni++;
               }
@@ -1350,6 +1532,12 @@
             isComplete: hadirHariIni === 5
           };
         });
+
+        // Update Kartu Hadir Sesi Aktif (Misal: Hadir Subuh: 69/79)
+        const labelSessionEl = document.getElementById('label-stat-session');
+        const valSessionEl = document.getElementById('session-present-count');
+        if (labelSessionEl) labelSessionEl.textContent = `Hadir ${activePrayer}`;
+        if (valSessionEl) valSessionEl.textContent = `${hadirSesiAktif}/${jamaahData.length}`;
 
         if (searchKeyword) {
           dailyAnalysis = dailyAnalysis.filter(j => 
@@ -1507,96 +1695,99 @@
     }
 
     // Salin Laporan WhatsApp (Adaptif Harian vs Rentang)
-    document.getElementById('btn-copy-absent').addEventListener('click', () => {
-      let text = "";
+    const btnCopyAbsent = document.getElementById('btn-copy-absent');
+    if (btnCopyAbsent) {
+      btnCopyAbsent.addEventListener('click', () => {
+        let text = "";
 
-      if (currentPeriod === 'today') {
-        const viewDateStr = formatDateToYMD(activeViewDate);
-        const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
+        if (currentPeriod === 'today') {
+          const viewDateStr = formatDateToYMD(activeViewDate);
+          const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
 
-        text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${viewDateStr}\n\n`;
+          text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${viewDateStr}\n\n`;
 
-        let adaCatatan = false;
-        jamaahData.forEach((santri) => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+          let adaCatatan = false;
+          jamaahData.forEach((santri) => {
+            const sId = String(santri.id).trim().toLowerCase();
+            const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
 
-          let bolos = [];
-          prayerList.forEach(p => {
-            const pLog = sLogs.find(l => l.prayer === p);
-            if (!pLog || pLog.status === 'Alfa') {
-              bolos.push(p);
+            let bolos = [];
+            prayerList.forEach(p => {
+              const pLog = sLogs.find(l => l.prayer === p);
+              if (!pLog || pLog.status === 'Alfa') {
+                bolos.push(p);
+              }
+            });
+
+            if (bolos.length > 0) {
+              adaCatatan = true;
+              text += `${santri.name} (${santri.id}) ➔ *Tidak Sholat: ${bolos.join(', ')}*\n`;
             }
           });
 
-          if (bolos.length > 0) {
-            adaCatatan = true;
-            text += `${santri.name} (${santri.id}) ➔ *Tidak Sholat: ${bolos.join(', ')}*\n`;
+          if (!adaCatatan) {
+            text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu pada tanggal ini!`;
           }
-        });
 
-        if (!adaCatatan) {
-          text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu pada tanggal ini!`;
+        } else {
+          const startDate = document.getElementById('range-start-date').value;
+          const endDate = document.getElementById('range-end-date').value;
+
+          if (!startDate || !endDate) return alert('Pilih rentang tanggal terlebih dahulu.');
+          const d1 = new Date(startDate);
+          const d2 = new Date(endDate);
+          const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
+          const targetPerSantri = diffDays * 5;
+
+          const validLogs = logsData.filter(l => {
+            const d = parseDateNormalized(l.date);
+            return d >= startDate && d <= endDate;
+          });
+
+          const ranking = jamaahData.map(santri => {
+            const sId = String(santri.id).trim().toLowerCase();
+            const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+            const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
+            const totalTercatat = uniqueSessions.size;
+
+            const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
+            const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
+            const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
+            const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
+            const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
+
+            return {
+              name: santri.name,
+              id: santri.id,
+              hadir: hadirMurniCount,
+              masbuq: masbuqCount,
+              pulang: pulangCount,
+              sakit: sakitCount,
+              alfa: alfaCount,
+              target: targetPerSantri
+            };
+          }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
+
+          const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
+          if (listCatatan.length === 0) return alert('Semua santri disiplin di rentang tanggal ini.');
+
+          text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${startDate} s/d ${endDate} (${diffDays} Hari)\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
+          listCatatan.forEach((r, i) => {
+            let ket = [];
+            if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
+            if (r.masbuq > 0) ket.push(`${r.masbuq}x Masbuq`);
+            if (r.sakit > 0) ket.push(`${r.sakit}x Sakit`);
+            if (r.pulang > 0) ket.push(`${r.pulang}x Pulang`);
+
+            text += `${i + 1}. ${r.name} (${r.id}) ➔ ${ket.join(', ')} (Hadir: ${r.hadir}/${r.target})\n`;
+          });
         }
 
-      } else {
-        const startDate = document.getElementById('range-start-date').value;
-        const endDate = document.getElementById('range-end-date').value;
-
-        if (!startDate || !endDate) return alert('Pilih rentang tanggal terlebih dahulu.');
-        const d1 = new Date(startDate);
-        const d2 = new Date(endDate);
-        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-        const targetPerSantri = diffDays * 5;
-
-        const validLogs = logsData.filter(l => {
-          const d = parseDateNormalized(l.date);
-          return d >= startDate && d <= endDate;
-        });
-
-        const ranking = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-          const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-          const totalTercatat = uniqueSessions.size;
-
-          const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
-          const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
-          const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
-          const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
-          const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
-
-          return {
-            name: santri.name,
-            id: santri.id,
-            hadir: hadirMurniCount,
-            masbuq: masbuqCount,
-            pulang: pulangCount,
-            sakit: sakitCount,
-            alfa: alfaCount,
-            target: targetPerSantri
-          };
-        }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
-
-        const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
-        if (listCatatan.length === 0) return alert('Semua santri disiplin di rentang tanggal ini.');
-
-        text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${startDate} s/d ${endDate} (${diffDays} Hari)\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
-        listCatatan.forEach((r, i) => {
-          let ket = [];
-          if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
-          if (r.masbuq > 0) ket.push(`${r.masbuq}x Masbuq`);
-          if (r.sakit > 0) ket.push(`${r.sakit}x Sakit`);
-          if (r.pulang > 0) ket.push(`${r.pulang}x Pulang`);
-
-          text += `${i + 1}. ${r.name} (${r.id}) ➔ ${ket.join(', ')} (Hadir: ${r.hadir}/${r.target})\n`;
-        });
-      }
-
-      navigator.clipboard.writeText(text).then(() => {
-        showFeedback('success', 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
-      }).catch(() => alert('Gagal menyalin.'));
-    });
+        navigator.clipboard.writeText(text).then(() => {
+          showFeedback('success', 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
+        }).catch(() => alert('Gagal menyalin.'));
+      });
+    }
 
     // Inisialisasi tampilan
     window.setDailyFilter('current_prayer');
