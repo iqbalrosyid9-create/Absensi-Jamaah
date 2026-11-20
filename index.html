@@ -48,6 +48,9 @@
         </div>
       </div>
       <div class="flex items-center space-x-1.5 shrink-0">
+        <span id="pending-badge" class="hidden px-2 py-1 text-[10px] font-bold rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse" title="Menunggu konfirmasi server">
+          ⏳ 0
+        </span>
         <button id="btn-sync-manual" title="Sinkronisasi Google Sheets" class="p-1.5 text-xs rounded-lg bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-900 text-white font-medium shadow flex items-center justify-center">
           🔄
         </button>
@@ -126,7 +129,7 @@
       <div class="bg-slate-800 rounded-2xl p-4 border border-slate-700">
         <h2 class="text-xs font-semibold text-slate-400 mb-2">ABSENSI MANUAL / ID</h2>
         <div class="flex space-x-2">
-          <input type="text" id="manual-id-input" placeholder="Ketik ID Santri (mis: 111)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-100">
+          <input type="text" id="manual-id-input" placeholder="Ketik ID Santri (mis: 24010078)" class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-100">
           <button id="btn-manual-submit" class="bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 px-4 py-2 rounded-xl text-xs font-semibold text-white">
             Absen
           </button>
@@ -239,11 +242,11 @@
         </button>
       </div>
 
-      <!-- Baris Filter & Navigasi Tanggal Cepat (Urutan: Sesi Sekarang -> Ada Alfa -> Semua) -->
+      <!-- Baris Filter & Navigasi Tanggal Cepat -->
       <div class="bg-slate-800 rounded-2xl p-3 border border-slate-700 space-y-3">
         <div class="flex items-center justify-between pb-2 border-b border-slate-700/60 gap-1.5">
           
-          <!-- Kiri: Filter Kategori Santri (Urutan: Sesi Sekarang -> Ada Alfa -> Semua) -->
+          <!-- Kiri: Filter Kategori Santri -->
           <div id="daily-filter-tabs" class="flex space-x-1 shrink-0">
             <button id="filter-btn-current-prayer" onclick="setDailyFilter('current_prayer')" class="px-2 py-1 text-[11px] font-semibold rounded-lg bg-amber-600 text-white shadow flex items-center gap-1">
               ⏳ <span id="label-active-prayer-filter">Sesi Sekarang</span>
@@ -424,15 +427,17 @@
     let isScanning = false;
     
     let currentPeriod = 'today'; // 'today' atau 'range'
-    let currentDailyFilter = 'current_prayer'; // Default fokus ke sesi aktif: Current Prayer -> Alfa -> All
+    let currentDailyFilter = 'current_prayer';
     let currentCheckInStatus = 'Tepat Waktu';
     let lastScanCooldown = {};
+    let lastScanActivityTime = 0;
     let activeEditingRecord = null;
 
     let activeViewDate = new Date();
 
     let jamaahData = JSON.parse(localStorage.getItem('absensi_jamaah_list')) || [];
     let logsData = JSON.parse(localStorage.getItem('absensi_logs')) || [];
+    let pendingQueue = JSON.parse(localStorage.getItem('absensi_pending_queue')) || [];
 
     const defaultSchedule = {
       Subuh:   { start: "04:00", end: "06:30" },
@@ -447,9 +452,39 @@
     const prayerList = ["Subuh", "Dzuhur", "Ashar", "Maghrib", "Isya"];
     const namaBulanIndo = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
+    function cleanIdString(val) {
+      return String(val == null ? '' : val).replace(/[\r\n\t\s]+/g, '').toLowerCase();
+    }
+
     function saveState() {
       localStorage.setItem('absensi_jamaah_list', JSON.stringify(jamaahData));
       localStorage.setItem('absensi_logs', JSON.stringify(logsData));
+    }
+
+    function savePendingQueue() {
+      localStorage.setItem('absensi_pending_queue', JSON.stringify(pendingQueue));
+      updatePendingBadgeUI();
+    }
+
+    function updatePendingBadgeUI() {
+      const badge = document.getElementById('pending-badge');
+      if (!badge) return;
+      if (pendingQueue.length > 0) {
+        badge.textContent = `⏳ ${pendingQueue.length}`;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function sendRecordToCloud(record) {
+      if (!SCRIPT_URL) return;
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(record)
+      }).catch(err => console.warn('Koneksi tertunda, akan dicoba ulang otomatis:', err));
     }
 
     function timeToMinutes(timeStr) {
@@ -464,7 +499,6 @@
       if (s <= e) {
         return nowMin >= s && nowMin <= e;
       } else {
-        // Melewati tengah malam (misal 19:01 s/d 03:59)
         return nowMin >= s || nowMin <= e;
       }
     }
@@ -558,11 +592,12 @@
     }
 
     function getSantriMasterName(id) {
-      const p = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(id).trim().toLowerCase());
+      const targetId = cleanIdString(id);
+      const p = jamaahData.find(j => cleanIdString(j.id) === targetId);
       return p ? p.name : '';
     }
 
-    // Navigasi Tanggal Cepat Harian (Kemarin ◀ Tanggal ▶ Besok)
+    // Navigasi Tanggal Cepat Harian
     window.changeViewDate = function(offsetDays) {
       activeViewDate.setDate(activeViewDate.getDate() + offsetDays);
       
@@ -616,7 +651,7 @@
       }
     };
 
-    // Filter Harian (Urutan: Current Prayer -> Alfa -> All)
+    // Filter Harian
     window.setDailyFilter = function(filter) {
       currentDailyFilter = filter;
       const btnCurrent = document.getElementById('filter-btn-current-prayer');
@@ -638,19 +673,41 @@
       renderRekapView();
     };
 
-    // Sinkronisasi Google Sheets
+    // Sinkronisasi Google Sheets (Anti-Timpa dengan Pending Queue)
     window.handleCloudMaster = function(res) {
       if (res && res.status === 'success') {
         if (Array.isArray(res.jamaah) && res.jamaah.length > 0) {
           jamaahData = res.jamaah;
         }
         if (Array.isArray(res.logs)) {
-          logsData = res.logs.map(l => {
+          const cloudLogs = res.logs.map(l => {
             if (!l.name || String(l.name).trim() === '') {
               l.name = getSantriMasterName(l.jamaahId) || ('Santri ' + l.jamaahId);
             }
             return l;
           });
+
+          const cloudKeys = new Set(
+            cloudLogs.map(l => `${cleanIdString(l.jamaahId)}|${parseDateNormalized(l.date)}|${String(l.prayer).trim().toLowerCase()}`)
+          );
+
+          const now = Date.now();
+          pendingQueue = pendingQueue.filter(item => {
+            const key = `${cleanIdString(item.jamaahId)}|${parseDateNormalized(item.date)}|${String(item.prayer).trim().toLowerCase()}`;
+            if (cloudKeys.has(key)) {
+              return false; // Sudah masuk ke Google Sheets
+            }
+            // Retry otomatis jika sudah > 12 detik belum tercatat di server
+            if (now - (item._queuedAt || 0) > 12000) {
+              item._queuedAt = now;
+              sendRecordToCloud(item);
+            }
+            return true;
+          });
+          savePendingQueue();
+
+          // Pertahankan item pending di posisi paling atas agar tidak hilang dari UI
+          logsData = [...pendingQueue, ...cloudLogs];
         }
         saveState();
         renderJamaahList();
@@ -658,8 +715,11 @@
       }
     };
 
-    function syncFromCloud() {
+    function syncFromCloud(force = false) {
       if (!SCRIPT_URL) return;
+      // Jeda sinkronisasi otomatis selama 5 detik setelah ada aktivitas scan
+      if (!force && (Date.now() - lastScanActivityTime < 5000)) return;
+
       const oldScript = document.getElementById('jsonp-sync-script');
       if (oldScript) oldScript.remove();
 
@@ -669,11 +729,11 @@
       document.body.appendChild(script);
     }
 
-    syncFromCloud();
-    setInterval(syncFromCloud, 10000);
+    syncFromCloud(true);
+    setInterval(() => syncFromCloud(false), 20000);
 
     document.getElementById('btn-sync-manual').addEventListener('click', () => {
-      syncFromCloud();
+      syncFromCloud(true);
       showFeedback('success', 'Sinkronisasi', 'Menghubungkan ke Google Sheets...');
     });
 
@@ -742,18 +802,19 @@
     });
 
     function processAttendance(jamaahId) {
-      const cleanId = String(jamaahId || '').trim();
+      const cleanId = cleanIdString(jamaahId);
       if (!cleanId) return;
 
       const nowTs = Date.now();
-      if (lastScanCooldown[cleanId] && (nowTs - lastScanCooldown[cleanId] < 5000)) {
+      if (lastScanCooldown[cleanId] && (nowTs - lastScanCooldown[cleanId] < 3500)) {
         return;
       }
       lastScanCooldown[cleanId] = nowTs;
+      lastScanActivityTime = nowTs;
 
       const prayer = document.getElementById('prayer-select').value;
       const todayStr = getTodayString();
-      const person = jamaahData.find(j => String(j.id).trim().toLowerCase() === cleanId.toLowerCase());
+      const person = jamaahData.find(j => cleanIdString(j.id) === cleanId);
       
       if (!person) {
         showFeedback('error', 'Tidak Ditemukan', `ID: ${cleanId} tidak ada di Database.`);
@@ -763,7 +824,7 @@
       }
 
       const alreadyCheckedIn = logsData.some(log => 
-        String(log.jamaahId).trim().toLowerCase() === cleanId.toLowerCase() && 
+        cleanIdString(log.jamaahId) === cleanId && 
         parseDateNormalized(log.date) === todayStr && 
         log.prayer === prayer
       );
@@ -776,30 +837,25 @@
       }
 
       const newRecord = {
-        id: 'LOG-' + Date.now(),
-        jamaahId: person.id,
+        id: 'LOG-' + nowTs,
+        jamaahId: String(person.id).trim(),
         name: person.name,
         category: person.category,
         prayer: prayer,
         date: todayStr,
         time: (new Date()).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        status: currentCheckInStatus
+        status: currentCheckInStatus,
+        _queuedAt: nowTs
       };
+
+      pendingQueue.unshift(newRecord);
+      savePendingQueue();
 
       logsData.unshift(newRecord);
       saveState();
       renderRekapView();
 
-      if (SCRIPT_URL) {
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(newRecord)
-        }).then(() => {
-          setTimeout(syncFromCloud, 1000);
-        }).catch(err => console.error('Gagal kirim:', err));
-      }
+      sendRecordToCloud(newRecord);
       
       let feedbackType = 'success';
       if (currentCheckInStatus === 'Masbuq') feedbackType = 'masbuq';
@@ -865,7 +921,7 @@
             processAttendance(decodedText);
             setTimeout(() => {
               if (html5QrCode && isScanning) html5QrCode.resume();
-            }, 2500);
+            }, 2000);
           },
           () => {}
         );
@@ -922,7 +978,7 @@
 
         if (target === 'tab-jamaah') renderJamaahList();
         if (target === 'tab-rekap') {
-          syncFromCloud();
+          syncFromCloud(false);
           renderRekapView();
         }
       });
@@ -952,7 +1008,7 @@
       document.getElementById('qr-preview-box').classList.add('hidden');
     });
 
-    // Render Tab Jamaah (Dengan Pencarian Instan)
+    // Render Tab Jamaah
     function renderJamaahList() {
       const container = document.getElementById('jamaah-list');
       const keyword = (document.getElementById('jamaah-search-input')?.value || '').toLowerCase().trim();
@@ -1049,7 +1105,6 @@
       renderRekapView();
     });
 
-    // Helper: Badge Status Kecil untuk Matriks 5 Waktu
     function getPrayerBadge(prayerName, status) {
       if (!status || status === 'Belum Ada' || status === 'Alfa') {
         return `<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-950 text-rose-300 border border-rose-800">${prayerName}: ❌</span>`;
@@ -1087,11 +1142,11 @@
       const newStatus = document.getElementById('edit-select-status').value;
       const selectedPrayer = document.getElementById('edit-select-prayer').value;
       const { jamaahId, date, name } = activeEditingRecord;
+      const normTargetId = cleanIdString(jamaahId);
 
       let found = false;
       logsData.forEach(l => {
-        const idMatch = String(l.jamaahId).trim().toLowerCase() === String(jamaahId).trim().toLowerCase();
-        if (idMatch && l.prayer === selectedPrayer && parseDateNormalized(l.date) === date) {
+        if (cleanIdString(l.jamaahId) === normTargetId && l.prayer === selectedPrayer && parseDateNormalized(l.date) === date) {
           l.status = newStatus;
           l.name = name;
           found = true;
@@ -1111,6 +1166,7 @@
         });
       }
 
+      lastScanActivityTime = Date.now();
       saveState();
       renderRekapView();
       closeEditModal();
@@ -1131,9 +1187,9 @@
           })
         }).then(() => {
           setTimeout(() => {
-            syncFromCloud();
+            syncFromCloud(true);
             showFeedback('success', 'Tersimpan Permanen', `Status ${name} berhasil disimpan di Spreadsheet.`);
-          }, 2000);
+          }, 2500);
         }).catch(err => {
           console.error('Gagal koreksi status:', err);
           showFeedback('error', 'Gagal Terhubung', 'Periksa koneksi internet ke Google Sheets.');
@@ -1147,8 +1203,8 @@
       const prayer = document.getElementById('prayer-select').value;
 
       const rawPresentLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr && l.prayer === prayer);
-      const presentIds = new Set(rawPresentLogs.map(l => String(l.jamaahId).trim().toLowerCase()));
-      const absentList = jamaahData.filter(j => !presentIds.has(String(j.id).trim().toLowerCase()));
+      const presentIds = new Set(rawPresentLogs.map(l => cleanIdString(l.jamaahId)));
+      const absentList = jamaahData.filter(j => !presentIds.has(cleanIdString(j.id)));
 
       if (absentList.length === 0) {
         return alert(`Semua santri sudah memiliki catatan pada sholat ${prayer} tanggal ${viewDateStr}.`);
@@ -1179,6 +1235,7 @@
         });
       });
 
+      lastScanActivityTime = Date.now();
       saveState();
       renderRekapView();
 
@@ -1193,7 +1250,7 @@
           })
         }).then(() => {
           showFeedback('error', 'Alfa Tersimpan', `${recordsToSend.length} santri berhasil dicatat Alfa ke Spreadsheet.`);
-          setTimeout(syncFromCloud, 2000);
+          setTimeout(() => syncFromCloud(true), 2500);
         }).catch(() => alert('Gagal mengirim data alfa ke spreadsheet.'));
       }
     };
@@ -1202,7 +1259,8 @@
     // GENERATE LAPORAN RESMI PDF PER SANTRI UNTUK WALI SANTRI
     // ==============================================================
     window.printStudentPDFReport = function(santriId) {
-      const santri = jamaahData.find(j => String(j.id).trim().toLowerCase() === String(santriId).trim().toLowerCase());
+      const targetId = cleanIdString(santriId);
+      const santri = jamaahData.find(j => cleanIdString(j.id) === targetId);
       if (!santri) return alert('Data santri tidak ditemukan.');
 
       let startDateStr = '';
@@ -1226,10 +1284,9 @@
         }
       }
 
-      const sId = String(santri.id).trim().toLowerCase();
       const studentLogs = logsData.filter(l => {
         const d = parseDateNormalized(l.date);
-        return String(l.jamaahId).trim().toLowerCase() === sId && d >= startDateStr && d <= endDateStr;
+        return cleanIdString(l.jamaahId) === targetId && d >= startDateStr && d <= endDateStr;
       });
 
       const totalSesi = dateList.length * 5;
@@ -1368,7 +1425,6 @@
             <span>💡 <b>Panduan Simpan PDF:</b> Pada opsi Printer/Tujuan, pilih <b>"Simpan sebagai PDF" (Save as PDF)</b> lalu klik Simpan.</span>
           </div>
 
-          <!-- KOP RESMI PONDOK -->
           <table class="header-table">
             <tr>
               <td style="width: 55px; text-align: left; vertical-align: middle; font-size: 38px;">🕌</td>
@@ -1379,7 +1435,6 @@
             </tr>
           </table>
 
-          <!-- BIODATA SANTRI -->
           <table style="width: 100%; font-size: 12px; margin-bottom: 12px;">
             <tr>
               <td style="width: 15%;"><b>Nama Santri</b></td>
@@ -1395,7 +1450,6 @@
             </tr>
           </table>
 
-          <!-- STATISTIK RINGKASAN -->
           <div class="box-stat">
             <div class="stat-grid">
               <div class="stat-card">
@@ -1424,7 +1478,6 @@
             </div>
           </div>
 
-          <!-- TABEL DETAIL 5 WAKTU -->
           <table class="main-data">
             <thead>
               <tr>
@@ -1441,7 +1494,6 @@
             </tbody>
           </table>
 
-          <!-- TANDA TANGAN & PENGESAHAN DENGAN LINE BREAK -->
           <table class="ttd-table" style="font-size: 11px; text-align: center;">
             <tr>
               <td style="width: 50%;">
@@ -1476,15 +1528,11 @@
       const searchKeyword = (document.getElementById('rekap-search-input').value || '').toLowerCase().trim();
       const activePrayer = document.getElementById('prayer-select').value;
 
-      // Update teks tombol sesi aktif
       const labelActiveEl = document.getElementById('label-active-prayer-filter');
       if (labelActiveEl) {
         labelActiveEl.textContent = 'Belum ' + activePrayer;
       }
 
-      // ==========================================
-      // MODE 1: REKAP HARIAN (NAVIGASI TANGGAL BEBAS)
-      // ==========================================
       if (currentPeriod === 'today') {
         const viewDateStr = formatDateToYMD(activeViewDate);
         const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
@@ -1494,8 +1542,8 @@
         let hadirSesiAktif = 0;
 
         let dailyAnalysis = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+          const sId = cleanIdString(santri.id);
+          const sLogs = dayLogs.filter(l => cleanIdString(l.jamaahId) === sId);
 
           let prayerStatus = { Subuh: '', Dzuhur: '', Ashar: '', Maghrib: '', Isya: '' };
           let hadirHariIni = 0;
@@ -1533,7 +1581,6 @@
           };
         });
 
-        // Update Kartu Hadir Sesi Aktif (Misal: Hadir Subuh: 69/79)
         const labelSessionEl = document.getElementById('label-stat-session');
         const valSessionEl = document.getElementById('session-present-count');
         if (labelSessionEl) labelSessionEl.textContent = `Hadir ${activePrayer}`;
@@ -1545,7 +1592,6 @@
           );
         }
 
-        // Filter: Sesi Sekarang vs Ada Alfa vs Semua
         if (currentDailyFilter === 'current_prayer') {
           dailyAnalysis = dailyAnalysis.filter(j => {
             const st = j.prayerStatus[activePrayer];
@@ -1591,9 +1637,6 @@
           `;
         });
 
-      // ==========================================
-      // MODE 2: RENTANG TANGGAL BEBAS
-      // ==========================================
       } else {
         const startDate = document.getElementById('range-start-date').value;
         const endDate = document.getElementById('range-end-date').value;
@@ -1621,8 +1664,8 @@
         });
 
         let ranking = jamaahData.map(santri => {
-          const sId = String(santri.id).trim().toLowerCase();
-          const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
+          const sId = cleanIdString(santri.id);
+          const sLogs = validLogs.filter(l => cleanIdString(l.jamaahId) === sId);
 
           const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
           const totalTercatat = uniqueSessions.size;
@@ -1694,102 +1737,8 @@
       }
     }
 
-    // Salin Laporan WhatsApp (Adaptif Harian vs Rentang)
-    const btnCopyAbsent = document.getElementById('btn-copy-absent');
-    if (btnCopyAbsent) {
-      btnCopyAbsent.addEventListener('click', () => {
-        let text = "";
-
-        if (currentPeriod === 'today') {
-          const viewDateStr = formatDateToYMD(activeViewDate);
-          const dayLogs = logsData.filter(l => parseDateNormalized(l.date) === viewDateStr);
-
-          text = `*LAPORAN KEDISIPLINAN SHOLAT HARIAN (5 WAKTU)*\n🕌 PPTQ Al Husna Lestari\n📅 Tanggal: ${viewDateStr}\n\n`;
-
-          let adaCatatan = false;
-          jamaahData.forEach((santri) => {
-            const sId = String(santri.id).trim().toLowerCase();
-            const sLogs = dayLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-
-            let bolos = [];
-            prayerList.forEach(p => {
-              const pLog = sLogs.find(l => l.prayer === p);
-              if (!pLog || pLog.status === 'Alfa') {
-                bolos.push(p);
-              }
-            });
-
-            if (bolos.length > 0) {
-              adaCatatan = true;
-              text += `${santri.name} (${santri.id}) ➔ *Tidak Sholat: ${bolos.join(', ')}*\n`;
-            }
-          });
-
-          if (!adaCatatan) {
-            text += `🎉 Alhamdulillah, semua santri lengkap melaksanakan sholat 5 waktu pada tanggal ini!`;
-          }
-
-        } else {
-          const startDate = document.getElementById('range-start-date').value;
-          const endDate = document.getElementById('range-end-date').value;
-
-          if (!startDate || !endDate) return alert('Pilih rentang tanggal terlebih dahulu.');
-          const d1 = new Date(startDate);
-          const d2 = new Date(endDate);
-          const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24)) + 1;
-          const targetPerSantri = diffDays * 5;
-
-          const validLogs = logsData.filter(l => {
-            const d = parseDateNormalized(l.date);
-            return d >= startDate && d <= endDate;
-          });
-
-          const ranking = jamaahData.map(santri => {
-            const sId = String(santri.id).trim().toLowerCase();
-            const sLogs = validLogs.filter(l => String(l.jamaahId).trim().toLowerCase() === sId);
-            const uniqueSessions = new Set(sLogs.map(l => `${parseDateNormalized(l.date)}_${l.prayer}`));
-            const totalTercatat = uniqueSessions.size;
-
-            const masbuqCount = sLogs.filter(l => l.status === 'Masbuq').length;
-            const pulangCount = sLogs.filter(l => l.status === 'Izin Pulang').length;
-            const sakitCount = sLogs.filter(l => l.status === 'Sakit').length;
-            const hadirMurniCount = sLogs.filter(l => l.status === 'Tepat Waktu' || l.status === 'Masbuq').length;
-            const alfaCount = Math.max(0, targetPerSantri - totalTercatat);
-
-            return {
-              name: santri.name,
-              id: santri.id,
-              hadir: hadirMurniCount,
-              masbuq: masbuqCount,
-              pulang: pulangCount,
-              sakit: sakitCount,
-              alfa: alfaCount,
-              target: targetPerSantri
-            };
-          }).sort((a, b) => (b.alfa - a.alfa) || (b.masbuq - a.masbuq));
-
-          const listCatatan = ranking.filter(r => r.alfa > 0 || r.masbuq > 0 || r.sakit > 0 || r.pulang > 0);
-          if (listCatatan.length === 0) return alert('Semua santri disiplin di rentang tanggal ini.');
-
-          text = `*REKAP EVALUASI DISIPLIN SHOLAT SANTRI*\n🕌 PPTQ Al Husna Lestari\n📊 Periode: ${startDate} s/d ${endDate} (${diffDays} Hari)\n🎯 Target: ${targetPerSantri} Sesi Waktu\n\n`;
-          listCatatan.forEach((r, i) => {
-            let ket = [];
-            if (r.alfa > 0) ket.push(`*${r.alfa}x Alfa*`);
-            if (r.masbuq > 0) ket.push(`${r.masbuq}x Masbuq`);
-            if (r.sakit > 0) ket.push(`${r.sakit}x Sakit`);
-            if (r.pulang > 0) ket.push(`${r.pulang}x Pulang`);
-
-            text += `${i + 1}. ${r.name} (${r.id}) ➔ ${ket.join(', ')} (Hadir: ${r.hadir}/${r.target})\n`;
-          });
-        }
-
-        navigator.clipboard.writeText(text).then(() => {
-          showFeedback('success', 'Disalin', 'Format laporan WhatsApp berhasil disalin!');
-        }).catch(() => alert('Gagal menyalin.'));
-      });
-    }
-
     // Inisialisasi tampilan
+    updatePendingBadgeUI();
     window.setDailyFilter('current_prayer');
     updateDateStepperUI();
     renderJamaahList();
